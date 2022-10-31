@@ -5,6 +5,9 @@ import random
 from anytree import Node
 
 
+from data.data_manager import DatabaseManager
+
+
 def print_me(screen, msg):
     screen.addstr(0, 0, msg) # divide by zero
 
@@ -18,8 +21,9 @@ class ScrollableList(object):
         self.begin_col = begin_col
         self.win = curses.newwin(nlines, ncols, begin_line, begin_col)
         self.chosen_ind = 0
-        self.is_on_focus = is_on_focus # Will highligh the current selected item
-        self.visible_off_focus = visible_off_focus # Will underline the current selected item when focus is lost
+        self.secondary_chosen_ind = 0 # the item will be underline when focus is lost
+        self.is_on_focus = is_on_focus # whether to highligh the current selected item
+        self.visible_off_focus = visible_off_focus # whether to underline the `secondary_chosen_ind` when focus is lost
         self.items = items
         self.start_index = 0
         self.offset = 3
@@ -44,13 +48,10 @@ class ScrollableList(object):
             if len(item) > self.ncols:
                 item = item[:self.ncols-5] +' ...'
 
-            if i == self.chosen_ind-self.start_index:
-                if self.is_on_focus:
+            if i == self.chosen_ind-self.start_index and self.is_on_focus:
                     self.win.addstr(item+'\n', curses.A_STANDOUT)
-                elif self.visible_off_focus:
+            elif i == self.secondary_chosen_ind-self.start_index and self.visible_off_focus:
                     self.win.addstr(item+'\n', curses.A_UNDERLINE)
-                else:
-                    self.win.addstr(item+'\n')
             else:
                 self.win.addstr(item+'\n')
         self.win.refresh()
@@ -104,7 +105,8 @@ class TreeList(object):
         self.tree = Node(default_tag_name, expanded=True)
         construct_tree(self.tree, mdict)
         self.flatten_nodes = TreeList.render_tree(self.tree)
-        self.main_list = ScrollableList((nlines, ncols, begin_line, begin_col), [item.name for item  in self.flatten_nodes], visible_off_focus=True, is_on_focus=is_on_focus)
+        self.main_list = ScrollableList((nlines, ncols, begin_line, begin_col), [item.name for item  in self.flatten_nodes], visible_off_focus=False, is_on_focus=is_on_focus)
+        self.main_list.secondary_chosen_ind = self.main_list.chosen_ind
 
     def render(self):
         self.main_list.render()
@@ -145,30 +147,11 @@ class TreeList(object):
         return flatten_nodes
 
     def get_tags(self):
-        return set(self.flatten_nodes[self.main_list.chosen_ind].path[-1].split('/'))
+        return set(self.flatten_nodes[self.main_list.chosen_ind].path[-1].name.split('/'))
 
-
-class DatabaseManager(object):
-    def __init__(self):
-        self.collection_tree = {'optimization':{'admm': {}, \
-                                'constrained_methods':  {'PGD':{}, 'ADMM':{}}},
-                                 'nmf':         {'classical': {},  'deep': {}}
-                                }
-        self.all_papers = [
-                {'title': 'ADMM and Application', 'authors': ['1tri nguyen', 'john', 'ken'], 'year': 1994, 'venue': 'ICML', 'tags':  set(['admm', 'optimization', 'default'])},
-                {'title': 'ADMM1 and Application', 'authors': ['2tri nguyen', 'john', 'ken'], 'year': 1994, 'venue': 'ICML', 'tags':  set(['admm', 'optimization', 'default'])},
-                {'title': 'ADMM2 and Application', 'authors': ['3tri nguyen', 'john', 'ken'], 'year': 1994, 'venue': 'ICML', 'tags':  set(['admm', 'optimization', 'default' ])},
-                {'title': 'ADMM3 and Application', 'authors': ['4tri nguyen', 'john', 'ken'], 'year': 1994, 'venue': 'ICML', 'tags':  set(['admm', 'optimization', 'default'])},
-                {'title': 'ADMM4 and Application', 'authors': ['5tri nguyen', 'john', 'ken'], 'year': 1994, 'venue': 'ICML', 'tags':  set(['admm', 'optimization', 'default'])},
-                ]
-
-    def get_collection(self):
-        return self.collection_tree
-
-    def get_list_papers(self, tags):
-        result = []
-        tags = set(tags)
-        return [paper for paper in self.all_papers if tags.issubset(paper['tags'])]
+    def update_current_item(self):
+        self.main_list.secondary_chosen_ind = self.main_list.chosen_ind
+        self.render()
 
 
 class MainApp(object):
@@ -207,15 +190,17 @@ class MainApp(object):
                 my_cols[chosen_col].select_next()
                 if chosen_col == 1:
                     chosen_ind = my_cols[chosen_col].chosen_ind
-                    attributes = MainApp.get_paper_attributes(self.papers[chosen_ind])
-                    my_cols[2].update(attributes, chosen_ind=0, start_index=0)
+                    if len(self.papers)>0:
+                        attributes = MainApp.get_paper_attributes(self.papers[chosen_ind])
+                        my_cols[2].update(attributes, chosen_ind=0, start_index=0)
 
             elif c == ord('k'):
                 my_cols[chosen_col].select_previous()
                 if chosen_col == 1:
                     chosen_ind = my_cols[chosen_col].chosen_ind
-                    attributes = MainApp.get_paper_attributes(self.papers[chosen_ind])
-                    my_cols[2].update(attributes, chosen_ind=0, start_index=0)
+                    if len(self.papers)>0:
+                        attributes = MainApp.get_paper_attributes(self.papers[chosen_ind])
+                        my_cols[2].update(attributes, chosen_ind=0, start_index=0)
 
             elif c == ord('l'):
                 if chosen_col<len(my_cols)-1:
@@ -235,22 +220,28 @@ class MainApp(object):
                 my_cols[chosen_col].expand()
             elif c == ord('c'):
                 my_cols[chosen_col].collapse()
-            elif c == curses.KEY_ENTER:
+            elif c == curses.KEY_ENTER or c == 10 or c == 13:
                 if chosen_col == 0:
-                    tags = self.my_cols[0].get_tags()
+                    tags = my_cols[0].get_tags()
+                    my_cols[0].update_current_item()
                     self.papers = self.database.get_list_papers(tags)
-                    my_cols[chosen_col].collapse()
+                    my_cols[1].update([paper['title'] for paper in
+                        self.papers])
+                    if len(self.papers)>0:
+                        attributes = MainApp.get_paper_attributes(self.papers[my_cols[1].chosen_ind])
+                        my_cols[2].update(attributes)
 
     def get_paper_attributes(paper):
-        return ['Author: ' + ','.join(paper['authors']),
+        return ['Authors: ' + ','.join(paper['author']),
                 'Year: ' + str(paper['year']),
-                'Venue: ' + str(paper['venue']),
+                'Venue: ' + str(paper['journal']),
                 ]
 
 def main(stdscr):
-    # stdscr = curses.initscr()
-    # curses.noecho()
-    # curses.cbreak()
+    stdscr = curses.initscr()
+    curses.noecho()
+    curses.cbreak()
+    stdscr.keypad(True)
     app = MainApp()
     app.run(stdscr)
 
