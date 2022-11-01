@@ -7,5 +7,5 @@ I like Zotero a lot, but its GUI on linux is a bit cranky, so that's why BibMan 
 
 ![demo](https://github.com/ductri/BibMan/blob/main/screenshot/demo1.png)
 
-[![Link to a demo (very basic)](A basic demo (still in prototype mode))](https://www.youtube.com/watch?v=ZtqbXcG9E6Y)
+[(A basic demo (still in prototype mode))](https://www.youtube.com/watch?v=ZtqbXcG9E6Y)
 
