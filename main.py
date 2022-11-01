@@ -4,6 +4,7 @@ import random
 import subprocess
 import os
 from curses.textpad import Textbox
+import math
 
 from anytree import Node
 
@@ -36,7 +37,6 @@ class ScrollableList(object):
 
     def render(self):
         self.win.erase()
-        self.win.box()
         visible_start = self.start_index
         visible_end = self.start_index+self.nlines-1
         if self.chosen_ind > visible_start+self.offset-1 and self.chosen_ind < visible_end-self.offset:
@@ -58,6 +58,8 @@ class ScrollableList(object):
                     self.win.addstr(i+1, 1, item, curses.A_UNDERLINE)
             else:
                 self.win.addstr(i+1, 1, item)
+
+        self.win.box()
         self.win.refresh()
 
     def select_next(self):
@@ -95,16 +97,22 @@ class ScrollableList(object):
         self.render()
 
     def resize(self, nlines, ncols):
-        self.win.clear()
+        self.clear()
         self.win.resize(nlines, ncols)
         self.nlines = nlines
         self.ncols = ncols
         self.render()
 
     def move(self, y, x):
-        self.win.clear()
+        self.clear()
         self.win.mvwin(y, x)
         self.render()
+
+    def clear(self):
+        self.win.border(' ', ' ', ' ',' ',' ',' ',' ',' ')
+        self.win.refresh()
+        self.win.clear()
+        self.win.refresh()
 
 class TreeList(object):
     def __init__(self, pos, mdict, is_on_focus=False, default_tag_name='default'):
@@ -175,6 +183,9 @@ class TreeList(object):
     def move(self, y, x):
         self.main_list.move(y, x)
 
+    def update(self, items, chosen_ind=0, start_index=0):
+        pass
+
 class Status(object):
     def __init__(self, pos):
         nlines, ncols, begin_line, begin_col = pos
@@ -216,32 +227,33 @@ class MainApp(object):
     def __init__(self, stdscr):
         self.database = DatabaseManager()
         self.stdscr = stdscr
+        self.nlines, self.ncols = self.stdscr.getmaxyx()
 
         self.layout_ratio = (0.1, 0.6, 0.3)
         self.padding = 3
 
-        self.tree_pos, self.col1_pos, self.col2_pos, self.status_pos = self.__estimate_layout()
+        self.tree_pos, self.col1_pos, self.col2_pos, self.status_pos, _ = self.__estimate_layout()
 
     def __estimate_layout(self, is_tree_visible=True):
-        # curses.resize_term(10, 10)
-        ncols_= -1
-        nlines_= -1
-        # curses.is_term_resized(nlines_, ncols_)
         nlines, ncols = self.stdscr.getmaxyx()
-        # # print_me(self.stdscr, str(ncols) + ';' + str(ncols_))
-        # print_me(self.stdscr, 'from __estimate_layout: %d ' % ncols, 50)
+        is_enlarging = False
+        if ncols > self.ncols:
+            is_enlarging = True
+        self.nlines = nlines
+        self.ncols = ncols
+
         if is_tree_visible:
             self.layout_ratio = (0.1, 0.6, 0.3)
         else:
             self.layout_ratio = (0.0, 0.6, 0.3)
-        list_ncols = [int(self.layout_ratio[0]*ncols), int(self.layout_ratio[1]*ncols)]
+        list_ncols = [math.floor(self.layout_ratio[0]*ncols), math.floor(self.layout_ratio[1]*ncols)]
         list_ncols.append(ncols - list_ncols[0] - list_ncols[1]-2*self.padding-2)
         tree_pos = (10, list_ncols[0], 1, 1) # (nlines, ncols, begin_line, begin_col)
         col1_pos = (10, list_ncols[1], 1, 1+list_ncols[0]+self.padding) # (nlines, ncols, begin_line, begin_col)
         col2_pos = (10, list_ncols[2], 1, 1+list_ncols[0] + self.padding+list_ncols[1]+self.padding) # (nlines, ncols, begin_line, begin_col)
         status_pos = (1, ncols, nlines-1, 1)
 
-        return tree_pos, col1_pos, col2_pos, status_pos
+        return tree_pos, col1_pos, col2_pos, status_pos, is_enlarging
 
     def run(self):
         stdscr = self.stdscr
@@ -276,8 +288,6 @@ class MainApp(object):
         my_cols[chosen_col].get_focus()
         tmp = 0
         while True:
-            # print_me(self.stdscr, 'pos2: %d - pos3: %d' % (self.col1_pos[2], self.col1_pos[3]))
-            # my_cols[1].move(1, 15)
             c = status_bar.win.getch()
             if c == ord('q'):
                 break
@@ -305,10 +315,12 @@ class MainApp(object):
                     my_cols[chosen_col].lost_focus()
                     chosen_col -= 1
                     my_cols[chosen_col].get_focus()
-            elif c == ord('g'):
-                my_cols[chosen_col].goto(50)
             elif c == ord('G'):
-                my_cols[chosen_col].goto(-1)
+                if chosen_col == 1:
+                    my_cols[chosen_col].goto(-1)
+                    if len(self.papers)>0:
+                        attributes = MainApp.get_paper_attributes(self.papers[my_cols[1].chosen_ind])
+                        my_cols[2].update(attributes, chosen_ind=0, start_index=0)
             elif c == ord('e'):
                 if chosen_col == 0:
                     my_cols[chosen_col].expand()
@@ -339,21 +351,30 @@ class MainApp(object):
                     else:
                         status_bar.render('no file')
             elif c== curses.KEY_RESIZE:
-                tmp+=1
-                print_me(self.stdscr, 'way to go %d' % (tmp), 10)
-                # my_cols[1].render()
-                # nlines, xxx = self.stdscr.getmaxyx()
+                self.tree_pos, self.col1_pos, self.col2_pos, _, is_enlarging = self.__estimate_layout()
+
+                if is_enlarging:
+                    my_cols[2].resize(self.col2_pos[0], self.col2_pos[1])
+                    my_cols[2].move(self.col2_pos[2], self.col2_pos[3])
+
+                    my_cols[1].resize(self.col1_pos[0], self.col1_pos[1])
+                    my_cols[1].move(self.col1_pos[2], self.col1_pos[3])
+
+                    my_cols[0].resize(self.tree_pos[0], self.tree_pos[1])
+                else:
+                    my_cols[0].resize(self.tree_pos[0], self.tree_pos[1])
+
+                    my_cols[1].resize(self.col1_pos[0], self.col1_pos[1])
+                    my_cols[1].move(self.col1_pos[2], self.col1_pos[3])
+
+                    my_cols[2].resize(self.col2_pos[0], self.col2_pos[1])
+                    my_cols[2].move(self.col2_pos[2], self.col2_pos[3])
+
+
                 #
-                # # self.stdscr.erase()
-                self.tree_pos, self.col1_pos, self.col2_pos, _ =self.__estimate_layout()
-                # print_me(self.stdscr, 'self.tree_pos[0]: %e - self.tree_pos[1]: %e' % (self.tree_pos[0], self.tree_pos[1]), 0)
-                # print_me(self.stdscr, 'pos0: %d - pos1: %d' % (self.tree_pos[0], self.tree_pos[1]))
-                my_cols[0].resize(self.tree_pos[0], self.tree_pos[1])
-                my_cols[0].resize(self.tree_pos[0], self.tree_pos[1])
-                my_cols[1].resize(self.col1_pos[0], self.col1_pos[1])
-                my_cols[1].move(self.col1_pos[2], self.col1_pos[3])
-                my_cols[2].resize(self.col2_pos[0], self.col2_pos[1])
-                my_cols[2].move(self.col2_pos[2], self.col2_pos[3])
+                # my_cols[0].render()
+                # my_cols[1].render()
+                # my_cols[2].render()
             elif c== 27:
                 # Don't wait for another key
                 # If it was Alt then curses has already sent the other key
@@ -369,31 +390,36 @@ class MainApp(object):
             elif c == ord('/'):
                 # print_me(stdscr, 'backsplash')
                 input_box.active()
-                # print_me(stdscr, input_box.get())
-            # elif c == curses.KEY_F3:
-            #     print_me(stdscr, str(is_tree_visible))
-            #     is_tree_visible = not is_tree_visible
-            #     if is_tree_visible:
-            #         self.tree_pos, self.col1_pos, self.col2_pos, _ = self.__estimate_layout(is_tree_visible)
-            #         my_cols[0].resize(self.tree_pos[0], self.tree_pos[1])
-            #         my_cols[1].resize(self.col1_pos[0], self.col1_pos[1])
-            #         my_cols[1].move(self.col1_pos[2], self.col1_pos[3])
-            #         my_cols[2].resize(self.col2_pos[0], self.col2_pos[1])
-            #         my_cols[2].move(self.col2_pos[2], self.col2_pos[3])
-            #     else:
-            #         self.tree_pos, self.col1_pos, self.col2_pos, _ = self.__estimate_layout(is_tree_visible)
-            #         # my_cols[0].resize(self.tree_pos[0], self.tree_pos[1])
-            #         my_cols[1].resize(self.col1_pos[0], self.col1_pos[1])
-            #         my_cols[1].move(self.col1_pos[2], self.col1_pos[3])
-            #         my_cols[2].resize(self.col2_pos[0], self.col2_pos[1])
-            #         my_cols[2].move(self.col2_pos[2], self.col2_pos[3])
+            elif c == ord('V'):
+                stdscr.refresh()
+                curses.def_prog_mode()
+                curses.endwin()
+                relative_path = 'data/bib_collection.bib'
+                current_path = os.path.dirname(os.path.abspath(__file__))
+                path_to_file = os.path.join(current_path, relative_path)
+                subprocess.check_call(['/usr/bin/vim', '+normal G$', path_to_file])
+                curses.reset_prog_mode()
+                stdscr.refresh()
+            elif c== ord('r'):
+                self.database.reload()
+                collection_tree = self.database.get_collection()
+                my_cols[0].update(collection_tree)
+                first_collection = list(collection_tree.keys())[0]
+                self.papers = self.database.get_list_papers([first_collection])
+                list_items_1 = [paper['title'] for paper in self.papers]
+                my_cols[1].update(list_items_1)
+                if len(self.papers) > 0:
+                    attributes = MainApp.get_paper_attributes(self.papers[my_cols[1].chosen_ind])
+                else:
+                    attributes = []
+                my_cols[2].update(attributes)
 
 
     def get_paper_attributes(paper):
         return ['Title: ' + paper['title'].strip(),
                 'Authors: ' + paper['author'].strip(),
                 'Year: ' + str(paper['year']),
-                'Venue: ' + str(paper['journal']),
+                'Venue: ' + str(paper['booktitle']),
                 ]
 
 

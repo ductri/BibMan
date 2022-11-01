@@ -26,20 +26,21 @@ import bibtexparser
 
 
 class DatabaseManager(object):
+    def preprocessing(papers):
+        result = []
+        for paper in papers:
+            default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': ''}
+            paper['tags'] = set([item.strip() for item in paper['tags'].split(',')])
+            default_item.update(paper)
+            result.append(default_item)
+        return result
+
     def __init__(self):
-        def preprocessing(papers):
-            result = []
-            for paper in papers:
-                default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': ''}
-                paper['tags'] = set([item.strip() for item in paper['tags'].split(',')])
-                default_item.update(paper)
-                result.append(default_item)
-            return result
 
         self.collection_tree = {'community_detection':{'related_works': {'active':  {}}, },
                                }
         with open('./data/bib_collection.bib', 'rt') as bibfile:
-            self.all_papers = preprocessing(bibtexparser.load(bibfile).entries)
+            self.all_papers = DatabaseManager.preprocessing(bibtexparser.load(bibfile).entries)
 
     def get_collection(self):
         return self.collection_tree
@@ -48,6 +49,10 @@ class DatabaseManager(object):
         result = []
         tags = set(tags)
         return [paper for paper in self.all_papers if tags.issubset(paper['tags'])]
+
+    def reload(self):
+        with open('./data/bib_collection.bib', 'rt') as bibfile:
+            self.all_papers = DatabaseManager.preprocessing(bibtexparser.load(bibfile).entries)
 
 
 if __name__ == "__main__":
