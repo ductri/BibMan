@@ -1,46 +1,32 @@
 import json
 from tqdm import tqdm
 import bibtexparser
+import shutil
+import os
 
-
-# def get_papers():
-#     return [p['title'] for p in papers]
-#
-# class DataManager():
-#     def __init__(self):
-#         with open('./data/data_from_zotero.txt',  'rt') as file_handler:
-#             papers = file_handler.readlines()
-#         self.papers = [json.loads(item[:-1]) for item in papers]
-#         for i in range(len(self.papers)):
-#             tags = self.papers[i].get('tags', [])
-#             tags.append('DEFAULT')
-#             self.papers[i]['tags'] = tags
-#             self.papers[i]['authors'] = self.papers[i]['authors'].split(';')
-#
-#     def get_paper_property(paper_id):
-#         return {'name': 'Convex opt in ' + paper_id + ' in fastest manner', 'authors': ['tri nguyen']}
-#
-#     def get_all_papers(self):
-#         """return everything"""
-#         return self.papers
+from bibtexparser.bibdatabase import BibDatabase
 
 
 class DatabaseManager(object):
+    """VERY BUGGY"""
     def preprocessing(papers):
         result = []
         for paper in papers:
-            default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': ''}
-            paper['tags'] = set([item.strip() for item in paper['tags'].split(',')])
-            default_item.update(paper)
+            new_paper = paper.copy()
+            default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
+            new_paper['tags'] = set([item.strip() for item in paper['tags'].split(',')])
+            default_item.update(new_paper)
             result.append(default_item)
         return result
 
     def __init__(self):
-
         self.collection_tree = {'community_detection':{'related_works': {'active':  {}}, },
-                               }
+                'reading': {'diffusion': {}}}
         with open('./data/bib_collection.bib', 'rt') as bibfile:
-            self.all_papers = DatabaseManager.preprocessing(bibtexparser.load(bibfile).entries)
+            self.bib_database = bibtexparser.load(bibfile)
+            self.all_papers = DatabaseManager.preprocessing(self.bib_database.entries)
+
+        self.current_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
     def get_collection(self):
         return self.collection_tree
@@ -52,10 +38,38 @@ class DatabaseManager(object):
 
     def reload(self):
         with open('./data/bib_collection.bib', 'rt') as bibfile:
-            self.all_papers = DatabaseManager.preprocessing(bibtexparser.load(bibfile).entries)
+            self.bib_database = bibtexparser.load(bibfile)
+            self.all_papers = DatabaseManager.preprocessing(self.bib_database.entries)
+
+    def update_paper(self, paper_id, key, value):
+        def post_preprocess(papers):
+            for i in range(len(papers)):
+                papers[i]['tags'] = ','.join(papers[i]['tags'])
+            return papers
+
+        self.reload()
+        for ind, paper in enumerate(self.all_papers):
+            if paper['ID'] == paper_id:
+                paper[key] = value
+
+        self.bib_database = BibDatabase()
+        self.bib_database.entries = post_preprocess(self.all_papers)
+        self.dump()
+
+    def dump(self):
+        """
+        DANGEROUS
+        """
+        src = os.path.join(self.current_path, 'data', 'bib_collection.bib')
+        dst = os.path.join(self.current_path, 'data', '.bib_collection.bib')
+        shutil.copyfile(src, dst)
+        with open(src, 'wt') as bibtex_file:
+            bibtexparser.dump(self.bib_database, bibtex_file)
 
 
 if __name__ == "__main__":
     db = DatabaseManager()
+    db.update_paper('test', 'file', 'filefile')
+    db.dump()
     __import__('pdb').set_trace()
 

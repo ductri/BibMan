@@ -10,11 +10,11 @@ from anytree import Node
 
 
 from utils.data_manager import DatabaseManager
+from utils.network_utils import download_file
 
 
 def print_me(screen, msg, ncol=0):
     screen.addstr(0, ncol, msg) # divide by zero
-
 
 class ScrollableList(object):
     def __init__(self, pos, items, visible_off_focus=False, is_on_focus=True):
@@ -186,6 +186,14 @@ class TreeList(object):
     def update(self, items, chosen_ind=0, start_index=0):
         pass
 
+class Menu(ScrollableList):
+    def __init__(self, pos, items, visible_off_focus=False, is_on_focus=True):
+        ScrollableList.__init__(self, pos, items)
+
+    def disappear(self):
+        self.win.clear()
+        self.win.refresh()
+
 class Status(object):
     def __init__(self, pos):
         nlines, ncols, begin_line, begin_col = pos
@@ -224,6 +232,9 @@ class MyInput(object):
         return self.msg
 
 class MainApp(object):
+    """
+    Super BUGGY here, need a layer manager or something like that.
+    """
     def __init__(self, stdscr):
         self.database = DatabaseManager()
         self.stdscr = stdscr
@@ -233,9 +244,11 @@ class MainApp(object):
         self.padding = 3
 
         self.tree_pos, self.col1_pos, self.col2_pos, self.status_pos, _ = self.__estimate_layout()
+        self.current_path = os.path.dirname(os.path.abspath(__file__))
 
     def __estimate_layout(self, is_tree_visible=True):
         nlines, ncols = self.stdscr.getmaxyx()
+        height = min(30, nlines)
         is_enlarging = False
         if ncols > self.ncols:
             is_enlarging = True
@@ -248,14 +261,30 @@ class MainApp(object):
             self.layout_ratio = (0.0, 0.6, 0.3)
         list_ncols = [math.floor(self.layout_ratio[0]*ncols), math.floor(self.layout_ratio[1]*ncols)]
         list_ncols.append(ncols - list_ncols[0] - list_ncols[1]-2*self.padding-2)
-        tree_pos = (10, list_ncols[0], 1, 1) # (nlines, ncols, begin_line, begin_col)
-        col1_pos = (10, list_ncols[1], 1, 1+list_ncols[0]+self.padding) # (nlines, ncols, begin_line, begin_col)
-        col2_pos = (10, list_ncols[2], 1, 1+list_ncols[0] + self.padding+list_ncols[1]+self.padding) # (nlines, ncols, begin_line, begin_col)
+        tree_pos = (height, list_ncols[0], 1, 1) # (nlines, ncols, begin_line, begin_col)
+        col1_pos = (height, list_ncols[1], 1, 1+list_ncols[0]+self.padding) # (nlines, ncols, begin_line, begin_col)
+        col2_pos = (height, list_ncols[2], 1, 1+list_ncols[0] + self.padding+list_ncols[1]+self.padding) # (nlines, ncols, begin_line, begin_col)
         status_pos = (1, ncols, nlines-1, 1)
 
         return tree_pos, col1_pos, col2_pos, status_pos, is_enlarging
 
     def run(self):
+        def reload():
+            self.database.reload()
+            collection_tree = self.database.get_collection()
+            my_cols[0].update(collection_tree)
+            first_collection = list(collection_tree.keys())[0]
+            self.papers = self.database.get_list_papers([first_collection])
+            list_items_1 = [paper['title'] for paper in self.papers]
+            my_cols[1].update(list_items_1)
+            if len(self.papers) > 0:
+                attributes = MainApp.get_paper_attributes(self.papers[my_cols[1].chosen_ind])
+            else:
+                attributes = []
+            my_cols[2].update(attributes)
+
+
+
         stdscr = self.stdscr
         curses.curs_set(False)
         stdscr.clear()
@@ -283,6 +312,10 @@ class MainApp(object):
         editwin = curses.newwin(5,30, 2,1)
         input_box = MyInput(self.status_pos)
         is_tree_visible = True
+        menu_pos = (4, 10, 20, 5) #(nlines, ncols, begin_line, begin_col)
+        menu_items = ['add a file', 'remove']
+        menu_visiable = True
+        menu = Menu(menu_pos, menu_items)
 
         chosen_col = 1
         my_cols[chosen_col].get_focus()
@@ -369,12 +402,6 @@ class MainApp(object):
 
                     my_cols[2].resize(self.col2_pos[0], self.col2_pos[1])
                     my_cols[2].move(self.col2_pos[2], self.col2_pos[3])
-
-
-                #
-                # my_cols[0].render()
-                # my_cols[1].render()
-                # my_cols[2].render()
             elif c== 27:
                 # Don't wait for another key
                 # If it was Alt then curses has already sent the other key
@@ -388,8 +415,16 @@ class MainApp(object):
                 # Return to delay
                 stdscr.nodelay(False)
             elif c == ord('/'):
-                # print_me(stdscr, 'backsplash')
                 input_box.active()
+                url = input_box.get()
+                paper_id = self.papers[my_cols[1].chosen_ind]['ID']
+                filename = paper_id +'.pdf'
+                path_to_file = os.path.join(self.current_path, 'data', 'pdfs', filename)
+                if os.path.exists(path_to_file):
+                    raise Exception('file exists')
+                download_file(url, path_to_file)
+                self.database.update_paper(paper_id, 'file', os.path.join('pdfs', filename))
+                reload()
             elif c == ord('V'):
                 stdscr.refresh()
                 curses.def_prog_mode()
@@ -399,20 +434,33 @@ class MainApp(object):
                 path_to_file = os.path.join(current_path, relative_path)
                 subprocess.check_call(['/usr/bin/vim', '+normal G$', path_to_file])
                 curses.reset_prog_mode()
+                reload()
                 stdscr.refresh()
             elif c== ord('r'):
-                self.database.reload()
-                collection_tree = self.database.get_collection()
-                my_cols[0].update(collection_tree)
-                first_collection = list(collection_tree.keys())[0]
-                self.papers = self.database.get_list_papers([first_collection])
-                list_items_1 = [paper['title'] for paper in self.papers]
-                my_cols[1].update(list_items_1)
-                if len(self.papers) > 0:
-                    attributes = MainApp.get_paper_attributes(self.papers[my_cols[1].chosen_ind])
-                else:
-                    attributes = []
-                my_cols[2].update(attributes)
+                # self.database.reload()
+                # collection_tree = self.database.get_collection()
+                # my_cols[0].update(collection_tree)
+                # first_collection = list(collection_tree.keys())[0]
+                # self.papers = self.database.get_list_papers([first_collection])
+                # list_items_1 = [paper['title'] for paper in self.papers]
+                # my_cols[1].update(list_items_1)
+                # if len(self.papers) > 0:
+                #     attributes = MainApp.get_paper_attributes(self.papers[my_cols[1].chosen_ind])
+                # else:
+                #     attributes = []
+                # my_cols[2].update(attributes)
+                reload()
+            elif c == ord('m'):
+                # if menu_visiable:
+                #     menu.render()
+                #     menu.get_focus()
+                #     my_cols[chosen_col].lost_focus()
+                # else:
+                #     menu.clear()
+                #     my_cols[chosen_col].get_focus()
+                # menu_visiable = not menu_visiable
+                pass
+
 
 
     def get_paper_attributes(paper):
