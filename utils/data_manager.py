@@ -83,9 +83,12 @@ class DatabaseManager(object):
                 return paper
 
 
+
 if __name__ == "__main__":
+    import others
     db = DatabaseManager()
     # db.update_paper('test', 'file', 'filefile')
     # db.dump()
-    db.get_paper_attributes('test')
+    # db.get_paper_attributes('test')
+    print(others.export_bib_format(db.bib_database.entries[0]))
 

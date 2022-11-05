@@ -18,3 +18,15 @@ def find_node(tree, path_str):
         return tree_resolver.get(tree, '/'.join(path_str.split('/')[1:]))
     except ChildResolverError:
         return None
+
+def export_bib_format(paper_dict):
+    """
+    kind of boring
+    """
+    text = ''
+    text += '@'+paper_dict['ENTRYTYPE']+ ('{%s,\n'% paper_dict['ID'])
+    text += 'author = {%s}, \n' % paper_dict['author']
+    text += 'booktitle = {%s}, \n' % paper_dict['booktitle']
+    text += '}'
+    return text
+

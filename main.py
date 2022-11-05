@@ -9,6 +9,7 @@ import re
 
 from anytree import Node, PreOrderIter
 from anytree.resolver import Resolver, ChildResolverError
+import pyperclip
 
 
 from utils.data_manager import DatabaseManager
@@ -277,6 +278,10 @@ class PaperCol(ScrollableList):
                 path_to_file = self.database.get_paper_path(self.papers[self.chosen_ind]['ID'])
                 status = self.open_paper_external(path_to_file)
                 self.notify(status)
+            elif event['name'] == 'COPY_BIB':
+                pyperclip.copy(self.get_bib())
+                event = {'name': 'COPY_TO_CLIPBOARD', 'owner': 'paper_col'}
+                self.broadcast(event, 1)
         elif event['owner'] == 'att_col':
             if event['name'] == 'LOST_FOCUS':
                 ScrollableList.get_focus(self)
@@ -289,7 +294,11 @@ class PaperCol(ScrollableList):
                 self.update(new_list_papers)
                 self.goto(0)
 
+    def get_bib(self):
+        return others.export_bib_format(self.papers[self.chosen_ind])
+
     def notify(self, status):
+        # todo well, maybe this function is not that useful
         event = {'name': 'OPEN_FILE_EXTERNAL', 'owner': 'paper_col', 'code': status['code'], 'message': status['message']}
         self.broadcast(event, 1)
 
@@ -367,6 +376,10 @@ class AttCol(ScrollableList):
                 ScrollableList.goto(self, line_number)
             elif event['name'] == 'LEFT':
                 self.give_focus_to_left()
+            elif event['name'] == 'ENTER':
+                pyperclip.copy(self.items[self.chosen_ind])
+                event = {'name': 'COPY_TO_CLIPBOARD', 'owner': 'att_col'}
+                self.broadcast(event, 1)
 
     def give_focus_to_left(self):
         ScrollableList.lost_focus(self)
@@ -627,6 +640,10 @@ class MainApp(object):
             command_info = {'name': 'DOWNLOAD', 'paper_id': self.component_dict['paper_col'].get_current_paper()['ID'], 'url': command[9:].strip()}
         elif command[:10] == 'update_pdf':
             command_info = {'name': 'UPDATE_PDF', 'paper_id': self.component_dict['paper_col'].get_current_paper()['ID'], 'url': command[11:].strip()}
+        elif command[:8] == 'copy_bib':
+            event = {'name': 'COPY_BIB', 'owner': 'main_app'}
+            self.component_dict[self.global_state['current_component']].receive_event(event)
+            command_info = {'name': 'SKIP'}
         else:
             command_info = {'name': 'UNDEFINED', 'message': command.strip()}
         return command_info
@@ -649,8 +666,6 @@ class MainApp(object):
             paper_id = command_info['paper_id']
             filename = paper_id +'.pdf'
             path_to_file = os.path.join(self.current_path, 'data', 'pdfs', filename)
-            # if os.path.exists(path_to_file):
-            #     raise Exception('file exists')
             download_file(command_info['url'], path_to_file)
             self.database.update_paper(paper_id, 'file', os.path.join('pdfs', filename))
             self.notify_user('Downloading ... Done. Updated file')
@@ -697,9 +712,13 @@ class MainApp(object):
                     self.global_state['current_component'] = 'tree'
                 elif event['direction'] == 'RIGHT':
                     self.global_state['current_component'] = 'att_col'
+            elif event['name'] == 'COPY_TO_CLIPBOARD':
+                self.notify_user('Text is sent to clipboard')
         elif event['owner'] == 'att_col':
             if event['name'] == 'LOST_FOCUS':
                 self.global_state['current_component'] = 'paper_col'
+            elif event['name'] == 'COPY_TO_CLIPBOARD':
+                self.notify_user('Text is sent to clipboard')
 
 
 
