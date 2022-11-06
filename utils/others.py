@@ -30,3 +30,11 @@ def export_bib_format(paper_dict):
     text += '}'
     return text
 
+def get_node_index_from_list(node, list_nodes):
+    list_node_paths = [get_path(n) for n in list_nodes]
+    try:
+        return list_node_paths.index(get_path(node))
+    except ValueError:
+        return -1
+
+
