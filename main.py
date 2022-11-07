@@ -6,11 +6,13 @@ import os
 from curses.textpad import Textbox
 import math
 import re
+import itertools
 
 from anytree import Node, PreOrderIter
 from anytree.resolver import Resolver, ChildResolverError
 import pyperclip
-
+import pdf2bib
+from pdf2bib import pdf2bib_singlefile
 
 from utils.data_manager import DatabaseManager
 from utils.network_utils import download_file
@@ -37,6 +39,7 @@ class ScrollableList(object):
         self.start_index = 0
         self.offset = 3
         self.channels = dict()
+        self.__crossed_inds = []
         """
         Got to implement such that we only care about chosen index, the visiable window should react accordingly.
         """
@@ -60,6 +63,8 @@ class ScrollableList(object):
 
             if i == self.chosen_ind-self.start_index and self.is_on_focus:
                 self.win.addstr(i+1, 1, item, curses.A_STANDOUT)
+            elif (i+self.start_index) in self.__crossed_inds:
+                self.win.addstr(i+1, 1, item, curses.A_DIM)
             elif i == self.secondary_chosen_ind-self.start_index and self.visible_off_focus:
                 self.win.addstr(i+1, 1, item, curses.A_UNDERLINE)
             else:
@@ -103,11 +108,12 @@ class ScrollableList(object):
             self.chosen_ind = line_number
             self.render()
 
-    def update(self, items, chosen_ind=0, start_index=0, secondary_chosen_ind=0):
+    def update(self, items, chosen_ind=0, start_index=0, secondary_chosen_ind=0, disable_inds=[]):
         self.items = items
         self.chosen_ind = min(chosen_ind, len(items)-1) # todo a very naive attempt to prevent exception
         self.start_index = min(start_index, len(items)-1) # todo a very naive attempt to prevent exception
         self.secondary_chosen_ind = min(secondary_chosen_ind, len(items)-1) # todo a very naive attempt to prevent exception
+        self.__crossed_inds = disable_inds
 
         self.render()
 
@@ -175,6 +181,7 @@ class TreeList(ScrollableList):
         ScrollableList.__init__(self, pos, [item.name for item in self.flatten_nodes], visible_off_focus=True, is_on_focus=is_on_focus)
         self.channels = dict()
         self._selected_node = None if len(self.flatten_nodes) == 0 else self.flatten_nodes[0] # The `selected node` could be different from the `chosen_ind` node, it is the item at the ENTER event.
+        self.muted_nodes= []
 
     def lost_focus(self):
         ScrollableList.lost_focus(self)
@@ -216,6 +223,10 @@ class TreeList(ScrollableList):
         else:
             return set()
 
+    def __get_neg_tags(self):
+        return set(itertools.chain(*[others.get_path(n).split('/') for n in self.muted_nodes]))
+
+
     def get_current_item(self):
         """you are on thin ince"""
         return self.__get_tags()
@@ -235,7 +246,8 @@ class TreeList(ScrollableList):
         self.broadcast(event, 0)
 
     def broadcast_request_update(self):
-        event = {'name': 'UPDATE_COLLECTION', 'owner': 'tree', 'papers': self.database.get_list_papers(self.__get_tags())}
+        event = {'name': 'UPDATE_COLLECTION', 'owner': 'tree', \
+                'papers': self.database.get_list_papers(self.__get_tags(), self.__get_neg_tags())}
         self.broadcast(event, 0)
 
     def update(self, mdict):
@@ -255,6 +267,20 @@ class TreeList(ScrollableList):
                 secondary_chosen_ind=others.get_node_index_from_list(self._selected_node, self.flatten_nodes))
         self.broadcast_request_update()
 
+    def toggle_mute(self):
+        ind = others.get_node_index_from_list(self.flatten_nodes[self.chosen_ind], self.muted_nodes)
+        if ind != -1:
+            self.muted_nodes.remove(self.muted_nodes[ind])
+        else:
+            self.muted_nodes.append(self.flatten_nodes[self.chosen_ind])
+
+        muted_inds = [others.get_node_index_from_list(n, self.flatten_nodes) for n in self.muted_nodes]
+        ScrollableList.update(self, TreeList.__add_indent(self.flatten_nodes), \
+                chosen_ind=self.chosen_ind, start_index=self.start_index,
+                secondary_chosen_ind=others.get_node_index_from_list(self._selected_node, self.flatten_nodes),\
+                disable_inds=muted_inds)
+        self.broadcast_request_update()
+
     def receive_event(self, event):
         if event['owner'] == 'main_app':
             if event['name'] == 'DOWN':
@@ -270,12 +296,13 @@ class TreeList(ScrollableList):
                 self._selected_node = self.flatten_nodes[self.chosen_ind]
                 self.secondary_chosen_ind = self.chosen_ind
                 self.broadcast_new_collection()
-                # self.update_current_item()
                 self.render()
             elif event['name'] == 'EXPAND':
                 self.expand()
             elif event['name'] == 'COLLAPSE':
                 self.collapse()
+            elif event['name'] == 'TOGGLE_MUTE':
+                self.toggle_mute()
         if event['owner'] == 'paper_col':
             if event['name'] == 'LOST_FOCUS':
                 if event['direction'] == 'LEFT':
@@ -318,11 +345,15 @@ class PaperCol(ScrollableList):
                 pyperclip.copy(self.get_bib())
                 event = {'name': 'COPY_TO_CLIPBOARD', 'owner': 'paper_col'}
                 self.broadcast(event, 1)
-            elif event['name'] == 'new_collection':
+            elif event['name'] == 'new_collection': # todo why is it still here?
                 tags = event['tags']
                 new_list_papers = self.database.get_list_papers(tags)
                 self.update(new_list_papers)
                 # self.goto(0)
+            elif event['name'] == 'REQUEST_OPEN_BIB_FILE':
+                event = {'name': 'ASK_OPEN_BIB', 'paper_id': self.papers[self.chosen_ind]['ID'], 'owner': 'paper_col'}
+                self.broadcast(event, 1)
+
         elif event['owner'] == 'att_col':
             if event['name'] == 'LOST_FOCUS':
                 ScrollableList.get_focus(self)
@@ -351,6 +382,7 @@ class PaperCol(ScrollableList):
     def broadcast_new_paper(self):
         event = {'name': 'NEW_PAPER', 'owner': 'paper_col', 'paper': self.papers[self.chosen_ind]}
         self.broadcast(event, 0)
+
     def broadcast_request_update(self):
         event = {'name': 'UPDATE_PAPER', 'owner': 'paper_col', 'paper': self.papers[self.chosen_ind]}
         self.broadcast(event, 0)
@@ -388,20 +420,21 @@ class PaperCol(ScrollableList):
 
 
 class AttCol(ScrollableList):
+    ATTRIBUTES = [('title', 'Title: '), ('author','Authors: '), ('year', 'Year: '), ('booktitle', 'Venue: ')]
     def __init__(self, pos, paper, database, visible_off_focus=True, is_on_focus=False):
         self.database = database
         if paper:
-            atts = AttCol.get_paper_attributes(paper)
+            self.atts = AttCol.get_paper_attributes(paper)
         else:
-            atts = []
-        ScrollableList.__init__(self, pos, atts, visible_off_focus=visible_off_focus, is_on_focus=is_on_focus)
+            self.atts = []
+        items = AttCol.add_decoration(self.atts)
+        ScrollableList.__init__(self, pos, items, visible_off_focus=visible_off_focus, is_on_focus=is_on_focus)
+
+    def add_decoration(attr_values):
+        return [a+b for a,b in zip([att_title for (_, att_title) in AttCol.ATTRIBUTES], attr_values)]
 
     def get_paper_attributes(paper):
-        return ['Title: ' + paper['title'].strip(),
-                'Authors: ' + paper['author'].strip(),
-                'Year: ' + str(paper['year']),
-                'Venue: ' + str(paper['booktitle']),
-                ]
+        return [paper[item[0]] for item in AttCol.ATTRIBUTES]
 
     def receive_event(self, event):
         if event['owner'] == 'paper_col':
@@ -426,7 +459,7 @@ class AttCol(ScrollableList):
             elif event['name'] == 'LEFT':
                 self.give_focus_to_left()
             elif event['name'] == 'ENTER':
-                pyperclip.copy(self.items[self.chosen_ind])
+                pyperclip.copy(self.atts[self.chosen_ind])
                 event = {'name': 'COPY_TO_CLIPBOARD', 'owner': 'att_col'}
                 self.broadcast(event, 1)
 
@@ -437,8 +470,9 @@ class AttCol(ScrollableList):
         self.broadcast(event, 1)
 
     def update(self, paper):
-        atts = AttCol.get_paper_attributes(paper)
-        ScrollableList.update(self, atts, chosen_ind=self.chosen_ind, start_index=self.start_index)
+        self.atts = AttCol.get_paper_attributes(paper)
+        items = AttCol.add_decoration(self.atts)
+        ScrollableList.update(self, items, chosen_ind=self.chosen_ind, start_index=self.start_index)
 
 
 class Menu(ScrollableList):
@@ -552,6 +586,7 @@ class MainApp(object):
     def __init__(self, stdscr):
         self.channels = dict()
         self.database = DatabaseManager()
+        pdf2bib.config.set('verbose',False)
 
         self.stdscr = stdscr
         curses.curs_set(False)
@@ -669,7 +704,8 @@ class MainApp(object):
             elif c== curses.KEY_RESIZE:
                 self.update_interface_only()
             elif c == ord('V'):
-                self.open_bib_file()
+                event = {'name': 'REQUEST_OPEN_BIB_FILE', 'owner': 'main_app'}
+                self.component_dict[self.global_state['current_component']].receive_event(event)
             elif c== ord('r'):
                 self.reload()
             elif c == ord(':'):
@@ -681,6 +717,9 @@ class MainApp(object):
                     self.search_on()
                 else:
                     self.search_off()
+            elif c == ord('m'):
+                event = {'name': 'TOGGLE_MUTE', 'owner': 'main_app'}
+                self.component_dict[self.global_state['current_component']].receive_event(event)
         # elif c== 27:
         #     # Don't wait for another key
         #     # If it was Alt then curses has already sent the other key
@@ -732,8 +771,9 @@ class MainApp(object):
             self.component_dict[self.global_state['current_component']].receive_event(event)
             command_info = {'name': 'SKIP'}
         elif command[:9] == 'add_paper':
-            command_info = {'name': 'ADD_PAPER', 'owner': 'main_app', 'title': command[10:].strip()}
-            # self.component_dict[self.global_state['current_component']].receive_event(event)
+            command_info = {'name': 'ADD_PAPER', 'owner': 'main_app', 'title': command[9:].strip()}
+        elif command[:9] == 'paper_url':
+            command_info = {'name': 'ADD_PAPER_URL', 'owner': 'main_app', 'url': command[9:].strip()}
         else:
             command_info = {'name': 'UNDEFINED', 'message': command.strip()}
         return command_info
@@ -769,6 +809,25 @@ class MainApp(object):
 
             self.notify_user('Added a paper')
 
+        elif command_info['name'] == 'ADD_PAPER_URL':
+            self.notify_user('Downloading ...')
+            url = command_info['url']
+            filename = str(random.randint(0, 100000000000))
+            path_to_file = os.path.join(self.current_path, 'data', 'pdfs', '%s.pdf'%filename)
+            download_file(url, path_to_file)
+
+            self.notify_user('Retrieving bib info ...')
+            result = pdf2bib_singlefile(path_to_file)
+            info = result['metadata']
+            paper_dict = {'file': path_to_file, 'title': info['title'], \
+                    'author': str(info['author']), 'year': str(info['year']), \
+                    'tags': self.component_dict['tree'].get_current_item()}
+            if 'journal' in info:
+                paper_dict['journal'] = info['journal']
+            self.database.add_paper(paper_dict)
+            self.update_data()
+            self.notify_user('Added a paper')
+
     def open_paper_external(self, relative_path):
         path_to_file = os.path.join(self.current_path, 'data', relative_path)
         if os.path.isfile(path_to_file):
@@ -778,18 +837,17 @@ class MainApp(object):
         else:
             self.notify_user('file not found')
 
-
     def notify_user(self, message):
         self.component_dict['status_bar'].update(message)
 
-    def open_bib_file(self):
+    def open_bib_file(self, key='53314681848'):
         self.stdscr.refresh()
         curses.def_prog_mode()
         curses.endwin()
         relative_path = 'data/bib_collection.bib'
         current_path = os.path.dirname(os.path.abspath(__file__))
         path_to_file = os.path.join(current_path, relative_path)
-        subprocess.check_call(['/usr/bin/vim', '+normal G$', path_to_file])
+        subprocess.check_call(['/usr/bin/vim', '-c silent! /%s'%key, path_to_file])
         curses.reset_prog_mode()
         self.reload()
         self.stdscr.refresh()
@@ -821,6 +879,8 @@ class MainApp(object):
                 self.notify_user('Text is sent to clipboard')
             elif event['name'] == 'ASK_OPEN_FILE':
                 self.open_paper_external(event['relative_path'])
+            elif event['name'] == 'ASK_OPEN_BIB':
+                self.open_bib_file(event['paper_id'])
         elif event['owner'] == 'att_col':
             if event['name'] == 'LOST_FOCUS':
                 self.global_state['current_component'] = 'paper_col'

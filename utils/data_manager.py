@@ -14,10 +14,12 @@ class DatabaseManager(object):
     Next step: eliminate dependence on this poor Bibtexparser
     """
 
+    DEFAULT_ITEM = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ',', 'pages':  '', 'volumne': ''}
     def __init__(self):
         self.current_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
         self.collection_tree = {'community_detection':{'related_works': {'active':  {'test': {}}}, },
-                'reading': {'diffusion': {}}}
+                'reading': {'diffusion': {'low':  {}}},
+                'test':{}}
         with open('./data/bib_collection.bib', 'rt') as bibfile:
             bib_database = bibtexparser.load(bibfile)
         self.papers = DatabaseManager.preprocessing(bib_database.entries)
@@ -26,7 +28,8 @@ class DatabaseManager(object):
         result = []
         for paper in papers:
             new_paper = paper.copy()
-            default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
+            # default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
+            default_item = DatabaseManager.DEFAULT_ITEM.copy()
             new_paper['tags'] = set([item.strip() for item in paper['tags'].split(',')])
             default_item.update(new_paper)
             result.append(default_item)
@@ -39,10 +42,12 @@ class DatabaseManager(object):
     def get_collection(self):
         return self.collection_tree
 
-    def get_list_papers(self, tags):
-        result = []
+    def get_list_papers(self, tags, neg_tags=set()):
         tags = set(tags)
-        return [paper for paper in self.papers if tags.issubset(paper['tags'])]
+        result = [paper for paper in self.papers if tags.issubset(paper['tags'])]
+        if neg_tags:
+            result = [paper for paper in result if not neg_tags.issubset(paper['tags'])]
+        return result
 
     def reload(self):
         with open('./data/bib_collection.bib', 'rt') as bibfile:
@@ -77,7 +82,8 @@ class DatabaseManager(object):
                 return paper
 
     def add_paper(self, paper_info):
-        default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
+        # default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
+        default_item = DatabaseManager.DEFAULT_ITEM.copy()
         default_item.update(paper_info)
         default_item['ID'] = str(random.randint(0, 100000000000))
         default_item['ENTRYTYPE'] = 'inproceedings'
@@ -85,6 +91,16 @@ class DatabaseManager(object):
 
         self.dump()
         self.reload()
+
+    # def remove_paper(self, paper_info):
+    #     default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
+    #     default_item.update(paper_info)
+    #     default_item['ID'] = str(random.randint(0, 100000000000))
+    #     default_item['ENTRYTYPE'] = 'inproceedings'
+    #     self.papers.append(default_item)
+    #
+    #     self.dump()
+    #     self.reload()
 
 
 if __name__ == "__main__":

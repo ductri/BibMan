@@ -27,6 +27,11 @@ def export_bib_format(paper_dict):
     text += '@'+paper_dict['ENTRYTYPE']+ ('{%s,\n'% paper_dict['ID'])
     text += 'author = {%s}, \n' % paper_dict['author']
     text += 'booktitle = {%s}, \n' % paper_dict['booktitle']
+    text += 'journal = {%s}, \n' % paper_dict['journal']
+    text += 'pages = {%s}, \n' % paper_dict['pages']
+    text += 'volume = {%s}, \n' % paper_dict['volume']
+    text += 'title = {%s}, \n' % paper_dict['title']
+    text += 'year = {%s}, \n' % paper_dict['year']
     text += '}'
     return text
 
