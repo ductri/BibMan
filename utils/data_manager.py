@@ -4,6 +4,7 @@ import bibtexparser
 import shutil
 import os
 import random
+from datetime import datetime
 
 from bibtexparser.bibdatabase import BibDatabase
 
@@ -14,12 +15,16 @@ class DatabaseManager(object):
     Next step: eliminate dependence on this poor Bibtexparser
     """
 
-    DEFAULT_ITEM = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ',', 'pages':  '', 'volumne': ''}
+    DEFAULT_ITEM = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ',', 'pages':  '', 'volume': '', 'created_time': '01/01/1994 00:00:00'}
+    DATETIME_FORMAT = '%m/%d/%Y %H:%M:%S'
     def __init__(self):
         self.current_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-        self.collection_tree = {'community_detection':{'related_works': {'active':  {'test': {}}}, },
-                'reading': {'diffusion': {'low':  {}}},
-                'test':{}}
+        self.collection_tree = \
+                {'community_detection':{'constrained_clustering': {'active':  {'test': {}}, 'proof': {}}, 'constrastive_learning':  {}, 'mm':  {}},
+                'reading': {'diffusion': {'low':  {}}, 'gen': {}},
+                'math':{},
+                 'volmin': {}
+                 }
         with open('./data/bib_collection.bib', 'rt') as bibfile:
             bib_database = bibtexparser.load(bibfile)
         self.papers = DatabaseManager.preprocessing(bib_database.entries)
@@ -30,13 +35,21 @@ class DatabaseManager(object):
             new_paper = paper.copy()
             # default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
             default_item = DatabaseManager.DEFAULT_ITEM.copy()
-            new_paper['tags'] = set([item.strip() for item in paper['tags'].split(',')])
+            if 'tags' in new_paper.keys():
+                new_paper['tags'] = set([item.strip() for item in paper['tags'].split(',')])
             default_item.update(new_paper)
             result.append(default_item)
         return result
     def post_preprocess(papers):
+        """
+        You better raise Exception here if there's any thing suspicious
+        """
         for i in range(len(papers)):
             papers[i]['tags'] = ','.join(papers[i]['tags'])
+        for paper in papers:
+            for k, v in paper.items():
+                if not isinstance(v, str):
+                    raise Exception('Paper id: %s: Expect field "%s:%s" to be string' %  (paper['ID'], k, str(v)))
         return papers
 
     def get_collection(self):
@@ -82,25 +95,22 @@ class DatabaseManager(object):
                 return paper
 
     def add_paper(self, paper_info):
-        # default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
         default_item = DatabaseManager.DEFAULT_ITEM.copy()
         default_item.update(paper_info)
         default_item['ID'] = str(random.randint(0, 100000000000))
         default_item['ENTRYTYPE'] = 'inproceedings'
+        now = datetime.now()
+        default_item['created_time'] = now.strftime(DatabaseManager.DATETIME_FORMAT)
         self.papers.append(default_item)
 
         self.dump()
         self.reload()
 
-    # def remove_paper(self, paper_info):
-    #     default_item = {'title': '',  'author': '', 'year': '', 'journal': '', 'file': '', 'booktitle': '', 'tags': ','}
-    #     default_item.update(paper_info)
-    #     default_item['ID'] = str(random.randint(0, 100000000000))
-    #     default_item['ENTRYTYPE'] = 'inproceedings'
-    #     self.papers.append(default_item)
-    #
-    #     self.dump()
-    #     self.reload()
+    def remove_paper(self, paper_id):
+        paper = self._look_paper_up(paper_id)
+        self.papers.remove(paper)
+        self.dump()
+        self.reload()
 
 
 if __name__ == "__main__":

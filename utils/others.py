@@ -1,3 +1,4 @@
+import re
 
 from anytree import Node, PreOrderIter
 from anytree.resolver import Resolver, ChildResolverError
@@ -43,3 +44,20 @@ def get_node_index_from_list(node, list_nodes):
         return -1
 
 
+def format_bib(info, path_to_file):
+    def format_authors(author_info):
+        return ' and '.join([author['family']+', '+author['given'] for author in author_info])
+
+    paper_dict = dict()
+    paper_dict['title'] = info['title']
+    paper_dict['author'] = format_authors(info['author'])
+    paper_dict['year'] = str(info.get('year', ''))
+    paper_dict['booktitle'] = info.get('booktitle', '')
+    paper_dict['pages'] = str(info.get('pages', ''))
+    paper_dict['organization'] = info.get('organization', '')
+    return paper_dict
+
+
+def search_title(papers, key):
+    result = [paper for paper in papers if paper['title'].lower().find(key.lower())!=-1]
+    return result
