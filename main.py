@@ -477,21 +477,39 @@ class AttCol(ScrollableList):
         ScrollableList.__init__(self, pos, items, visible_off_focus=visible_off_focus, is_on_focus=is_on_focus, wrap=True)
 
     def add_decoration(self, attr_values):
+        def title2lines(title):
+            max_lines = 4
+            head_len = max(self.ncols-10, 0)
+            head = title[:head_len]
+            tail = title[head_len:]
+            step = self.ncols - 3
+            lines = ['  ' + tail[i:i+step] for i in range(0, len(tail), step)]
+            if len(lines) > max_lines:
+                lines = lines[:max_lines-1] + ['   ...']
+            else:
+                lines = lines + ['']*(max_lines - len(lines))
+            lines = [head] + lines
+            return lines
+
+        def author2lines(author_str):
+            max_lines = 4
+            lines = [' - ' + author.strip() for author in author_str.split('and')]
+            if len(lines)>max_lines:
+                lines = lines[:max_lines-1] + [' ...']
+            else:
+                lines = lines + [''] * (max_lines-len(lines))
+            lines = [''] + lines
+            return lines
+
         results = []
         for ((attr_key, attr_name), attr_value) in zip(AttCol.ATTRIBUTES, attr_values):
             if attr_key == 'created_time':
                 results.append(attr_name + '\n    ' + attr_value)
             elif attr_key == 'title':
-                head_len = max(self.ncols-10, 0)
-                head = attr_value[:head_len]
-                tail = attr_value[head_len:]
-                step = self.ncols - 3
-                lines = ['  ' + tail[i:i+step] for i in range(0, len(tail), step)]
-                lines = [head] + lines +['']
+                lines = title2lines(attr_value)
                 results.append(attr_name + '\n'.join(lines))
             elif attr_key == 'author':
-                lines = [' - ' + author.strip() for author in attr_value.split('and')]
-                lines = [''] + lines + ['']
+                lines = author2lines(attr_value)
                 results.append(attr_name + '\n'.join(lines))
             elif attr_key == 'year':
                 lines = [attr_value, '']
