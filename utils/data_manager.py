@@ -19,12 +19,15 @@ class DatabaseManager(object):
     DATETIME_FORMAT = '%m/%d/%Y %H:%M:%S'
     def __init__(self):
         self.current_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-        self.collection_tree = \
-                {'community_detection':{'constrained_clustering': {'active':  {'test': {}}, 'proof': {}}, 'constrastive_learning':  {}, 'mm':  {}},
-                'reading': {'diffusion': {'low':  {}}, 'gen': {}},
-                'math':{},
-                 'volmin': {}
-                 }
+        # self.collection_tree = \
+        #         {'community_detection':{'constrained_clustering': {'active':  {'test': {}}, 'proof': {}}, 'constrastive_learning':  {}, 'mm':  {}},
+        #         'reading': {'diffusion': {'low':  {}}, 'gen': {}},
+        #         'math':{},
+        #          'volmin': {'pertubation': {}},
+        #          'book': {}
+        #          }
+        with open('./data/collection_tree.txt', 'rt') as file_handler:
+            self.collection_tree = json.load(file_handler)
         with open('./data/bib_collection.bib', 'rt') as bibfile:
             bib_database = bibtexparser.load(bibfile)
         self.papers = DatabaseManager.preprocessing(bib_database.entries)
@@ -80,6 +83,13 @@ class DatabaseManager(object):
         """
         DANGEROUS
         """
+        self.dump_bib()
+        self.dump_collection_tree()
+
+    def dump_bib(self):
+        """
+        DANGEROUS
+        """
         src = os.path.join(self.current_path, 'data', 'bib_collection.bib')
         dst = os.path.join(self.current_path, 'data', '.bib_collection.bib')
         shutil.copyfile(src, dst)
@@ -88,6 +98,18 @@ class DatabaseManager(object):
         bib_database.entries = DatabaseManager.post_preprocess(self.papers)
         with open(src, 'wt') as bibtex_file:
             bibtexparser.dump(bib_database, bibtex_file)
+
+    def dump_collection_tree(self):
+        """
+        DANGEROUS
+        """
+        src = os.path.join(self.current_path, 'data', 'collection_tree.txt')
+        dst = os.path.join(self.current_path, 'data', '.collection_tree.txt')
+        shutil.copyfile(src, dst)
+
+        with open(src, 'wt') as file_handler:
+            json.dump(self.collection_tree, file_handler)
+
 
     def _look_paper_up(self, paper_id):
         for paper in self.papers:
@@ -112,12 +134,19 @@ class DatabaseManager(object):
         self.dump()
         self.reload()
 
+    def add_new_tag(self, tag_name, path_to_parent=''):
+        current_node = self.collection_tree
+        for node in path_to_parent.split('/')[1:]:
+            current_node = current_node[node]
+        current_node[tag_name] = {}
+        self.dump_collection_tree()
+
 
 if __name__ == "__main__":
     import others
     db = DatabaseManager()
     # db.update_paper('test', 'file', 'filefile')
-    # db.dump()
+    db.dump()
     # db.get_paper_attributes('test')
-    print(others.export_bib_format(db.bib_database.entries[0]))
+    # print(others.export_bib_format(db.bib_database.entries[0]))
 

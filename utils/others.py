@@ -61,3 +61,12 @@ def format_bib(info, path_to_file):
 def search_title(papers, key):
     result = [paper for paper in papers if paper['title'].lower().find(key.lower())!=-1]
     return result
+
+
+def search_author(papers, key):
+    def satisfied(authors):
+        return any([author.lower().find(key.lower()) !=-1 for author in authors.split('and')])
+
+    result = [paper for paper in papers if satisfied(paper['author'])]
+    return result
+

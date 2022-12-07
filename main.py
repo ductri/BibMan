@@ -250,7 +250,6 @@ class TreeList(ScrollableList):
     def __get_neg_tags(self):
         return set(itertools.chain(*[others.get_path(n).split('/') for n in self.muted_nodes]))
 
-
     def get_current_item(self):
         """you are on thin ince"""
         return self.__get_tags()
@@ -305,6 +304,17 @@ class TreeList(ScrollableList):
                 disable_inds=muted_inds)
         self.broadcast_request_update()
 
+    def add_new_child_tag(self, tag_name):
+        chosen_node = self.flatten_nodes[self.chosen_ind]
+        self.database.add_new_tag(tag_name, path_to_parent=others.get_path(chosen_node))
+        self.update(self.database.get_collection())
+
+    def add_new_sibling_tag(self, tag_name):
+        chosen_node = self.flatten_nodes[self.chosen_ind].parent
+        self.database.add_new_tag(tag_name, path_to_parent=others.get_path(chosen_node))
+        self.update(self.database.get_collection())
+
+
     def receive_event(self, event):
         if event['owner'] == 'main_app':
             if event['name'] == 'DOWN':
@@ -331,6 +341,10 @@ class TreeList(ScrollableList):
                 self.shift_right()
             elif event['name'] == 'SHIFT_LEFT':
                 self.shift_left()
+            elif event['name'] == 'NEW_CHILD_TAG':
+                self.add_new_child_tag(event['tag_name'])
+            elif event['name'] == 'NEW_SIBLING_TAG':
+                self.add_new_sibling_tag(event['tag_name'])
         if event['owner'] == 'paper_col':
             if event['name'] == 'LOST_FOCUS':
                 if event['direction'] == 'LEFT':
@@ -341,7 +355,7 @@ class PaperCol(ScrollableList):
     def __init__(self, pos, papers, database, visible_off_focus=False, is_on_focus=False):
         self.__papers = papers # todo maybe we dont need this much info
         self.database = database
-        items = [paper['title'] for paper in self.__papers]
+        items = ['> '+paper['title'] for paper in self.__papers]
         ScrollableList.__init__(self, pos, items, visible_off_focus=visible_off_focus, is_on_focus=is_on_focus)
 
     def __set_papers(self, papers):
@@ -447,7 +461,7 @@ class PaperCol(ScrollableList):
 
     def update(self, papers):
         self.__set_papers(papers)
-        items = [paper['title'] for paper in self.__papers]
+        items = ['> '+paper['title'] for paper in self.__papers]
         ScrollableList.update(self, items, chosen_ind=self.chosen_ind, start_index=self.start_index)
 
     def get_current_paper(self):
@@ -907,10 +921,20 @@ class MainApp(object):
                 command_info = {'name': 'EVINCE', 'owner': 'main_app'}
             elif command[:7] == 's_title':
                 command_info = {'name': 'SEARCH_TITLE', 'key': command[7:].strip()}
+            elif command[:8] == 's_author':
+                command_info = {'name': 'SEARCH_AUTHOR', 'key': command[8:].strip()}
             elif command[:14] == 'add_local_file':
                 command_info = {'name': 'ADD_LOCAL_FILE', 'paper_id': self.component_dict['paper_col'].get_current_paper()['ID'], 'path': command[14:].strip()}
             elif command[:7] == 'add_tag':
                 command_info = {'name': 'ADD_TAG', 'tag': command[7:].strip()}
+            elif command[:13] == 'new_child_tag':
+                event = {'name': 'NEW_CHILD_TAG', 'owner': 'main_app', 'tag_name': command[13:].strip()}
+                self.component_dict[self.global_state['current_component']].receive_event(event)
+                command_info = {'name': 'SKIP'}
+            elif command[:15] == 'new_sibling_tag':
+                event = {'name': 'NEW_SIBLING_TAG', 'owner': 'main_app', 'tag_name': command[15:].strip()}
+                self.component_dict[self.global_state['current_component']].receive_event(event)
+                command_info = {'name': 'SKIP'}
             else:
                 command_info = {'name': 'UNDEFINED', 'message': command.strip()}
         return command_info
@@ -924,6 +948,7 @@ class MainApp(object):
             path_to_file = os.path.join(self.current_path, 'data', 'pdfs', filename)
             if download_file(command_info['url'], path_to_file):
                 self.database.update_paper(paper_id, 'file', os.path.join('pdfs', filename))
+                self.database.update_paper(paper_id, 'url', command_info['url'])
                 self.notify_user('Downloading ... Done')
             else:
                 self.notify_user('Downloading ... Failed.')
@@ -985,13 +1010,20 @@ class MainApp(object):
             self.searched_papers = others.search_title(self.component_dict['paper_col'].get_papers(), command_info['key'])
             self.search_on()
             self.global_state['alternative_gui_visible'] = True
+        elif command_info['name'] == 'SEARCH_AUTHOR':
+            self.searched_papers = others.search_author(self.component_dict['paper_col'].get_papers(), command_info['key'])
+            self.search_on()
+            self.global_state['alternative_gui_visible'] = True
         elif command_info['name'] == 'ADD_TAG':
             paper = self.component_dict['paper_col'].get_current_paper()
             tag = command_info['tag']
             paper_id = paper['ID']
             self.database.update_paper(paper_id, 'tags', paper['tags'] | set([tag]))
             self.notify_user('Added tag "%s" to paper id "%s"'% (tag, paper_id))
-
+        elif command_info['name'] == 'SKIP':
+            pass
+        else:
+            raise Exception('Command %s is undefined' % command_info['name'])
 
     def open_paper_external(self, relative_path, program='evince'):
         path_to_file = os.path.join(self.current_path, 'data', relative_path)
