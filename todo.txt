@@ -1,0 +1,15 @@
+- [high priority] choose multiple papers and add a new tag to all of them.
+- paper with multiple pdfs
+- search  over all other fields, including: notes, pdf
+- [minor] col paper state is not consistent when search on and off. So we have to decide whether MainApp or PaperCol has to keep track of current state vs search state.
+- move search gui to a separate window
+- Change background, text color
+- BUG: press S then S
+- Add an item by google scholar bib
+- format id of bib entry
+- check duplicated IDs
+- add an option to show all papers
+- [DONE] add note to paper, either plain text or latex. Add note field that contains path to note, so that changing key is fine.
+- What if an entry has no created_time.
+
+
