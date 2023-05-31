@@ -34,9 +34,17 @@ class PaperCol(ScrollableList):
 
     def get_papers(self):
         return self.__papers
-
     def get_bib(self):
-        return others.export_bib_format(self.__papers[self.get_single_chosen_item()])
+        return others.export_bib_format(self.get_current_paper())
+    def get_current_paper(self):
+        if len(self.__papers) > 0:
+            return self.__papers[self.get_single_chosen_item()]
+        else:
+            return None
+    def get_upper_paper(self):
+        return self.__papers[max(self.get_single_chosen_item()-1, 0)]
+    def get_lower_paper(self):
+        return self.__papers[min(self.get_single_chosen_item()+1, len(self.__papers)-1)]
 
     def lost_focus(self, direction):
         ScrollableList.lost_focus(self)
@@ -46,13 +54,13 @@ class PaperCol(ScrollableList):
 
     def broadcast_new_paper(self):
         if len(self.__papers)>0:
-            event = {'name': 'NEW_PAPER', 'owner': 'paper_col', 'paper': self.__papers[self.get_single_chosen_item()]}
+            event = {'name': 'NEW_PAPER', 'owner': 'paper_col', 'paper': self.get_current_paper()}
         else:
             event = {'name': 'NEW_PAPER', 'owner': 'paper_col', 'paper': None}
         self.broadcast(event, 0)
 
     def broadcast_request_update(self):
-        event = {'name': 'UPDATE_PAPER', 'owner': 'paper_col', 'paper': self.__papers[self.get_single_chosen_item()]}
+        event = {'name': 'UPDATE_PAPER', 'owner': 'paper_col', 'paper': self.get_current_paper()}
         self.broadcast(event, 0)
 
     def select_next(self):
@@ -98,12 +106,6 @@ class PaperCol(ScrollableList):
         items = self.papers2strs(self.__papers, deco_type=self.deco_type)
         ScrollableList.update(self, items, chosen_ind=self.get_single_chosen_item(), start_index=self.start_index)
 
-    def get_current_paper(self):
-        return self.__papers[self.get_single_chosen_item()]
-    def get_upper_paper(self):
-        return self.__papers[max(self.get_single_chosen_item()-1, 0)]
-    def get_lower_paper(self):
-        return self.__papers[min(self.get_single_chosen_item()+1, len(self.__papers)-1)]
 
     def dump(self):
         data = ScrollableList.dump(self)
@@ -188,7 +190,7 @@ class PaperCol(ScrollableList):
             elif event['name'] == 'LEFT':
                 self.lost_focus('LEFT')
             elif event['name'] == 'ENTER':
-                relative_path = self.__papers[self.get_single_chosen_item()]['file']
+                relative_path = self.get_current_paper()['file']
                 event = {'name': 'ASK_OPEN_FILE', 'owner': 'paper_col', 'relative_path': relative_path}
                 self.broadcast(event, 1)
             elif event['name'] == 'COPY_BIB':
@@ -201,19 +203,19 @@ class PaperCol(ScrollableList):
                 self.update(new_list_papers)
                 # self.goto(0)
             elif event['name'] == 'REQUEST_OPEN_BIB_FILE':
-                event = {'name': 'ASK_OPEN_BIB', 'paper_id': self.__papers[self.get_single_chosen_item()]['ID'], 'owner': 'paper_col'}
+                event = {'name': 'ASK_OPEN_BIB', 'paper_id': self.get_current_paper()['ID'], 'owner': 'paper_col'}
                 self.broadcast(event, 1)
             elif event['name'] == 'REMOVE_PAPER':
-                event = {'name': 'RESP_REMOVE_PAPER', 'paper_id': self.__papers[self.get_single_chosen_item()]['ID'], 'owner': 'paper_col'}
+                event = {'name': 'RESP_REMOVE_PAPER', 'paper_id': self.get_current_paper()['ID'], 'owner': 'paper_col'}
                 self.broadcast(event, 1)
             elif event['name'] == 'EVINCE':
-                event = {'name': 'RESP_EVINCE', 'relative_path': self.__papers[self.get_single_chosen_item()]['file'], 'owner': 'paper_col'}
+                event = {'name': 'RESP_EVINCE', 'relative_path': self.get_current_paper()['file'], 'owner': 'paper_col'}
                 self.broadcast(event, 1)
             elif event['name'] == 'ZATHURA':
-                event = {'name': 'RESP_ZATHURA', 'relative_path': self.__papers[self.get_single_chosen_item()]['file'], 'owner': 'paper_col'}
+                event = {'name': 'RESP_ZATHURA', 'relative_path': self.get_current_paper()['file'], 'owner': 'paper_col'}
                 self.broadcast(event, 1)
             elif event['name'] == 'OPEN_NOTE':
-                event = {'name': 'RESP_OPEN_NOTE', 'relative_path': self.__papers[self.get_single_chosen_item()]['ID']+'_note', 'owner': 'paper_col'}
+                event = {'name': 'RESP_OPEN_NOTE', 'relative_path': self.get_current_paper()['ID']+'_note', 'owner': 'paper_col'}
                 self.broadcast(event, 1)
             elif event['name'] == 'ORDERING_UP':
                 self.move_item_up()

@@ -10,6 +10,7 @@ import re
 import itertools
 from datetime import datetime
 import shutil
+import webbrowser
 
 from anytree import Node, PreOrderIter
 from anytree.resolver import Resolver, ChildResolverError
@@ -421,7 +422,9 @@ class MainApp(object):
             command_content = command[sep_ind:]
 
         if search:
-            if command_name == 'title':
+            if command.strip() == '':
+                command_info = {'name': 'SKIP'}
+            elif command_name == 'title':
                 command_info = {'name': 'SEARCH_TITLE', 'key': command_content.strip()}
             else:
                 command_info = {'name': 'SEARCH_TITLE', 'key': command.strip()}
@@ -619,14 +622,18 @@ class MainApp(object):
         self.reload()
         self.stdscr.refresh()
 
-    def open_paper_external(self, relative_path, program='evince'):
-        path_to_file = os.path.join(self.current_path, 'data', relative_path)
-        if os.path.isfile(path_to_file):
-            Popen([program, path_to_file], stdout=DEVNULL, stderr=STDOUT)
-            self.notify_user('opened paper successfully')
+    def open_paper_external(self, path, program='evince'):
+        if path.startswith('https'):
+            webbrowser.open(path, new=0, autoraise=True)
+            self.notify_user('opened url successfully')
         else:
-            pass
-            self.notify_user('file not found')
+            path_to_file = os.path.join(self.current_path, 'data', path)
+            if os.path.isfile(path_to_file):
+                Popen([program, path_to_file], stdout=DEVNULL, stderr=STDOUT)
+                self.notify_user('opened paper successfully')
+            else:
+                pass
+                self.notify_user('file not found')
 
     def notify_user(self, message):
         self.component_dict['status_bar'].update(message)

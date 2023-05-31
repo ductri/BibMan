@@ -1,1 +1,1 @@
-{"default": {}, "math": {"linear_algebra": {}, "calculus": {}}, "reading": {"diffusion": {"low": {}, "app": {}}, "gen": {"energy": {}, "flow": {}}, "concentration": {}}, "math": {}, "others": {"a": {}}}
+{"default": {}, "math": {}, "reading": {"diffusion": {"low": {}, "app": {}}, "gen": {"energy": {}, "flow": {}}, "concentration": {}}, "others": {"a": {}}}
