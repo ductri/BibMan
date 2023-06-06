@@ -31,6 +31,11 @@ class TreeList(ScrollableList):
         self._selected_node = None if len(self.flatten_nodes) == 0 else self.flatten_nodes[0] # The `selected node` could be different from the `chosen_ind` node, it is the item at the ENTER event.
         self.muted_nodes= []
 
+    def __decorate_nodes(nodes):
+        decorated_flatten_nodes = [' '*(node.depth-1)*2 + '▹' + node.name if node.children != () else ' '*(node.depth-1)*2 + ' ' + node.name for node in nodes]
+        return decorated_flatten_nodes
+
+
     def lost_focus(self):
         ScrollableList.lost_focus(self)
         event = {'name': 'LOST_FOCUS', 'owner': 'tree'}
@@ -41,7 +46,8 @@ class TreeList(ScrollableList):
         chosen_node = self.flatten_nodes[self.get_single_chosen_item()]
         chosen_node.expanded = True
         self.flatten_nodes = TreeList.render_tree(self.tree)
-        ScrollableList.update(self, [' '*(node.depth-1)*2 + node.name for node in self.flatten_nodes], \
+        decorated_flatten_nodes = TreeList.__decorate_nodes(self.flatten_nodes)
+        ScrollableList.update(self, decorated_flatten_nodes, \
                 chosen_ind=self.get_single_chosen_item(), start_index=self.start_index, \
                 secondary_chosen_ind=others.get_node_index_from_list(self._selected_node, self.flatten_nodes))
 
@@ -50,7 +56,9 @@ class TreeList(ScrollableList):
         chosen_node.parent.expanded=False
         self.flatten_nodes = TreeList.render_tree(self.tree)
         new_secondary_chosen_ind = -1 if self._selected_node not in self.flatten_nodes else self.flatten_nodes.index(self._selected_node)
-        ScrollableList.update(self, [' '*(node.depth-1)*2 + node.name for node in self.flatten_nodes], \
+
+        decorated_flatten_nodes = TreeList.__decorate_nodes(self.flatten_nodes)
+        ScrollableList.update(self, decorated_flatten_nodes, \
                 chosen_ind=self.flatten_nodes.index(chosen_node.parent), start_index=self.start_index, \
                 secondary_chosen_ind=others.get_node_index_from_list(self._selected_node, self.flatten_nodes))
 
@@ -83,7 +91,9 @@ class TreeList(ScrollableList):
         TreeList.construct_tree(self.tree, mdict)
         self.flatten_nodes = TreeList.render_tree(self.tree)
         self._selected_node = self.flatten_nodes[0]
-        ScrollableList.update(self, TreeList.__add_indent(self.flatten_nodes), \
+        decorated_flatten_nodes = TreeList.__decorate_nodes(self.flatten_nodes)
+        # TreeList.__add_indent(self.flatten_nodes), 
+        ScrollableList.update(self, decorated_flatten_nodes, \
                 chosen_ind=self.get_single_chosen_item(), start_index=self.start_index,
                 secondary_chosen_ind=self.flatten_nodes.index(self._selected_node))
         self.broadcast_new_collection()
@@ -109,7 +119,9 @@ class TreeList(ScrollableList):
         new_flatten_nodes = TreeList.render_tree(self.tree)
 
         self.flatten_nodes = new_flatten_nodes
-        ScrollableList.update(self, TreeList.__add_indent(self.flatten_nodes), \
+
+        decorated_flatten_nodes = TreeList.__decorate_nodes(self.flatten_nodes)
+        ScrollableList.update(self, decorated_flatten_nodes, \
                 chosen_ind=self.get_single_chosen_item(), start_index=self.start_index,
                 secondary_chosen_ind=others.get_node_index_from_list(self._selected_node, self.flatten_nodes))
         self.broadcast_request_update()
