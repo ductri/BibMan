@@ -24,7 +24,7 @@ class PaperCol(ScrollableList):
                 )
 
     def papers2strs(self, papers, deco_type=0):
-        deco_title = lambda paper: (f"[{paper['label']}] " if paper['label'] !='' else '') + paper['title']
+        deco_title = lambda paper: (f"[{','.join(sorted(list(paper['label'])))}] " if len(paper['label']) !=0 else '') + paper['title']
         if deco_type == 0:
             return ['> '+ deco_title(paper) for paper in papers]
         elif deco_type == 1:
@@ -129,6 +129,7 @@ class PaperCol(ScrollableList):
                 '- `search`', \
                 '- `add_tag` tag_name', \
                 '- `remove_tag` tag_name', \
+                '- `add_label` label_name', \
                 '', \
                 '**** SHORT KEYS ****', \
                 '- KEY B: add_bib', \
@@ -162,6 +163,18 @@ class PaperCol(ScrollableList):
         else:
             self.notify_user(f'Removed tag "{tag}" from {len(paper_ids)} papers, including [{paper_ids_str}], and so on. Interface is NOT updated')
 
+    def add_label(self, event):
+        papers = [self.__papers[i] for i in self.get_active_inds()]
+        paper_ids = [paper['ID'] for paper in papers]
+        new_labels = [paper['label'] | set([event['label']]) for paper in papers]
+        self.database.update_batch_paper(paper_ids, 'label', new_labels)
+
+        paper_ids_str = str(paper_ids[0])
+        label = event['label']
+        if len(paper_ids) == 1:
+            self.notify_user(f'Added label "{label}" to paper [{paper_ids_str}]')
+        else:
+            self.notify_user(f'Added label "{label}" to {len(paper_ids)} papers, including [{paper_ids_str}], and so on')
 
     def receive_event(self, event):
         if event['owner'] == 'main_app':
@@ -227,6 +240,8 @@ class PaperCol(ScrollableList):
                 self.add_tag(event)
             elif event['name'] == 'REMOVE_TAG':
                 self.remove_tag(event)
+            elif event['name'] == 'ADD_LABEL':
+                self.add_label(event)
         elif event['owner'] == 'att_col':
             if event['name'] == 'LOST_FOCUS':
                 ScrollableList.get_focus(self)

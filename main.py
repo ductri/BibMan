@@ -494,7 +494,11 @@ class MainApp(object):
             elif command_name == 'note':
                 command_info = {'name': 'OPEN_NOTE', 'owner': 'main_app'}
             elif command_name == 'add_label':
-                command_info = {'name': 'ADD_LABEL', 'label': command_content.strip()}
+                event = {'name': 'ADD_LABEL', 'owner': 'main_app', \
+                        'label': command_content.strip()}
+                current_component = self.component_dict[self.global_state['current_component']]
+                current_component.receive_event(event)
+                command_info = {'name': 'SKIP'}
             else:
                 command_info = {'name': 'UNDEFINED', 'message': command.strip()}
         return command_info
@@ -592,12 +596,17 @@ class MainApp(object):
             self.searched_papers = others.search_all(self.component_dict['paper_col'].get_papers(), command_info['key'])
             self.search_on()
             self.global_state['alternative_gui_visible'] = True
-        elif command_info['name'] == 'ADD_LABEL':
-            paper = self.component_dict['paper_col'].get_current_paper()
-            label = command_info['label']
-            paper_id = paper['ID']
-            self.database.update_paper(paper_id, 'label', label)
-            self.notify_user('Added label "%s" to paper id "%s"'% (label, paper_id))
+        # elif command_info['name'] == 'ADD_LABEL':
+        #     event = {'name': 'ADD_LABEL', 'owner' : 'main_app',  \
+        #             'label': command_content.strip()}
+        #     current_component = self.component_dict[self.global_state['current_component']]
+        #     current_component.receive_event(event)
+        #     command_info = {'name': 'SKIP'}
+            # paper = self.component_dict['paper_col'].get_current_paper()
+            # label = command_info['label']
+            # paper_id = paper['ID']
+            # self.database.update_paper(paper_id, 'label', label)
+            # self.notify_user('Added label "%s" to paper id "%s"'% (label, paper_id))
         elif command_info['name'] == 'LIST_COMMANDS':
             list_commands = self.component_dict[self.global_state['current_component']].get_list_commands()
             self.component_dict['help_box'].update('\n'.join(list_commands))

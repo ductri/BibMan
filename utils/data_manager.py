@@ -21,7 +21,7 @@ class DatabaseManager(object):
     DEFAULT_ITEM = {'title': '',  'author': '', 'year': '', 'journal': '', \
             'file': '', 'booktitle': '', 'tags': ',', 'pages':  '', \
             'volume': '', 'created_time': '01/01/1994 00:00:00', \
-            '__order_value': '10000000', 'label': ''}
+            '__order_value': '10000000', 'label': ','}
     DATETIME_FORMAT = '%m/%d/%Y %H:%M:%S'
     def __init__(self):
         self.current_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
@@ -53,6 +53,8 @@ class DatabaseManager(object):
             default_item = DatabaseManager.DEFAULT_ITEM.copy()
             if 'tags' in new_paper.keys():
                 new_paper['tags'] = set([item.strip() for item in paper['tags'].split(',')])
+            if 'label' in new_paper.keys():
+                new_paper['label'] = set([item.strip() for item in paper['label'].split(',') if item != ''])
             default_item.update(new_paper)
             result.append(default_item)
         return result
@@ -70,6 +72,16 @@ class DatabaseManager(object):
                 papers[i]['tags'] = tags
             else:
                 raise Exception('Unknow datatype of tags: %s' % str(type(tags)))
+
+            label = papers[i]['label']
+            if isinstance(label, list) or isinstance(label, set):
+                label = list(label)
+                label.sort()
+                papers[i]['label'] = ','.join(label)
+            elif isinstance(label, str):
+                papers[i]['label'] = label
+            else:
+                raise Exception('Unknow datatype of label: %s' % str(type(label)))
 
         for paper in papers:
             for k, v in paper.items():

@@ -1,0 +1,6 @@
+1. Basic movements
+2. Adding an item
+3. Adding an item from google scholar
+4. Removing, reordering
+5. Editing
+6. Note
