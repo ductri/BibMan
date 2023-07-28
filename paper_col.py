@@ -176,6 +176,19 @@ class PaperCol(ScrollableList):
         else:
             self.notify_user(f'Added label "{label}" to {len(paper_ids)} papers, including [{paper_ids_str}], and so on')
 
+    def remove_label(self, event):
+        papers = [self.__papers[i] for i in self.get_active_inds()]
+        paper_ids = [paper['ID'] for paper in papers]
+        label = event['label']
+        new_label = [paper['label'] - set([label]) for paper in papers]
+        self.database.update_batch_paper(paper_ids, 'label', new_label)
+
+        paper_ids_str = str(paper_ids[0])
+        if len(paper_ids) == 1:
+            self.notify_user(f'Removed label "{label}" from paper [{paper_ids_str}]. Interface is NOT updated')
+        else:
+            self.notify_user(f'Removed label "{label}" from {len(paper_ids)} papers, including [{paper_ids_str}], and so on. Interface is NOT updated')
+
     def receive_event(self, event):
         if event['owner'] == 'main_app':
             if event['name'] == 'UPDATE_COLLECTION':
@@ -242,6 +255,8 @@ class PaperCol(ScrollableList):
                 self.remove_tag(event)
             elif event['name'] == 'ADD_LABEL':
                 self.add_label(event)
+            elif event['name'] == 'REMOVE_LABEL':
+                self.remove_label(event)
         elif event['owner'] == 'att_col':
             if event['name'] == 'LOST_FOCUS':
                 ScrollableList.get_focus(self)

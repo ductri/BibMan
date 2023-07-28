@@ -499,6 +499,12 @@ class MainApp(object):
                 current_component = self.component_dict[self.global_state['current_component']]
                 current_component.receive_event(event)
                 command_info = {'name': 'SKIP'}
+            elif command_name == 'remove_label':
+                event = {'name': 'REMOVE_LABEL',  'owner' : 'main_app',  \
+                        'label': command_content.strip()}
+                current_component = self.component_dict[self.global_state['current_component']]
+                current_component.receive_event(event)
+                command_info = {'name': 'SKIP'}
             else:
                 command_info = {'name': 'UNDEFINED', 'message': command.strip()}
         return command_info
