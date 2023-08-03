@@ -220,6 +220,7 @@ class MainApp(object):
         # stdscr.bkgd(1)
 
         self.global_state = {'current_component':  'paper_col', 'alternative_gui_visible': False}
+
         self.max_nlines, self.max_ncols = self.get_size()
         self.positions_dict = MainApp.get_layout(self.max_nlines, self.max_ncols)
         self.component_dict = dict()
@@ -394,8 +395,7 @@ class MainApp(object):
                 self.notify_user('') # this is quite a not good hack
 
     def search_on(self):
-        if not self.global_state['alternative_gui_visible']:
-            self.global_state['paper_col_data'] = self.component_dict['paper_col'].dump()
+        self.global_state['paper_col_data'] = self.component_dict['paper_col'].dump()
         event = {'name': 'NEW_COLLECTION', 'papers': self.searched_papers, 'owner': 'main_app', 'search_result': True}
         self.component_dict['paper_col'].receive_event(event)
         self.notify_user('Showing search GUI')
@@ -632,7 +632,7 @@ class MainApp(object):
         relative_path = 'data/%s' % file_path
         current_path = os.path.dirname(os.path.abspath(__file__))
         path_to_file = os.path.join(current_path, relative_path)
-        subprocess.run(['/usr/bin/vim', path_to_file])
+        subprocess.run(['vim', path_to_file])
         curses.reset_prog_mode()
         self.reload()
         self.stdscr.refresh()
@@ -660,7 +660,7 @@ class MainApp(object):
         relative_path = 'data/bib_collection.bib'
         current_path = os.path.dirname(os.path.abspath(__file__))
         path_to_file = os.path.join(current_path, relative_path)
-        subprocess.run(['/usr/bin/vim', '-c silent! /%s'%key, path_to_file])
+        subprocess.run(['vim', '-c silent! /%s'%key, path_to_file])
         curses.reset_prog_mode()
         self.reload()
         self.stdscr.refresh()
@@ -672,7 +672,7 @@ class MainApp(object):
         relative_path = 'data/%s' % buffer_name
         current_path = os.path.dirname(os.path.abspath(__file__))
         path_to_file = os.path.join(current_path, relative_path)
-        subprocess.run(['/usr/bin/vim', '-c :set paste', "-c startinsert", path_to_file])
+        subprocess.run(['vim', '-c :set paste', "-c startinsert", path_to_file])
         with open('data/%s' % buffer_name, 'rt') as file_handler:
             text = file_handler.read()
         with open('data/%s' % buffer_name, 'wt') as file_handler:
