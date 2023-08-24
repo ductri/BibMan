@@ -1,0 +1,14 @@
+- paper with multiple pdfs
+- search  over all other fields, including: notes, pdf
+- [minor] col paper state is not consistent when search on and off. So we have to decide whether MainApp or PaperCol has to keep track of current state vs search state.
+- move search gui to a separate window
+- Change background, text color
+
+
+- format id of bib entry
+- check duplicated IDs
+
+
+- What if an entry has no created_time.
+
+- Reading history

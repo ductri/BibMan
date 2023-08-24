@@ -1,0 +1,147 @@
+@inproceedings{basu2004active,
+  title={Active semi-supervision for pairwise constrained clustering},
+  author={Basu, Sugato and Banerjee, Arindam and Mooney, Raymond J},
+  booktitle={Proceedings of the 2004 SIAM international conference on data mining},
+  pages={333--344},
+  year={2004},
+  organization={SIAM},
+  tags={community_detection, related_works, default},
+  file={./pdfs/1.9781611972740.31.pdf}
+}
+
+@inproceedings{basu2004probabilistic,
+  title={A probabilistic framework for semi-supervised clustering},
+  author={Basu, Sugato and Bilenko, Mikhail and Mooney, Raymond J},
+  booktitle={Proceedings of the tenth ACM SIGKDD international conference on Knowledge discovery and data mining},
+  pages={59--68},
+  year={2004},
+  tags={community_detection, related_works, default},
+  file={./pdfs/1014052.1014062.pdf}
+}
+
+@inproceedings{kulis2005semi,
+  title={Semi-supervised graph clustering: a kernel approach},
+  author={Kulis, Brian and Basu, Sugato and Dhillon, Inderjit and Mooney, Raymond},
+  booktitle={Proceedings of the 22nd international conference on machine learning},
+  pages={457--464},
+  year={2005},
+  tags={community_detection, related_works, default},
+  file={./pdfs/058_SemiSupervise_KulisEtAl.pdf}
+}
+
+@inproceedings{li2009constrained,
+  title={Constrained clustering via spectral regularization},
+  author={Li, Zhenguo and Liu, Jianzhuang and Tang, Xiaoou},
+  booktitle={2009 IEEE Conference on Computer Vision and Pattern Recognition},
+  pages={421--428},
+  year={2009},
+  organization={IEEE},
+  tags={community_detection, related_works, default},
+  file={./pdfs/Constrained_clustering_via_spectral_regularization.pdf}
+}
+
+@article{boecking2022constrained,
+  title={Constrained Clustering and Multiple Kernel Learning without Pairwise Constraint Relaxation},
+  author={Boecking, Benedikt and Jeanselme, Vincent and Dubrawski, Artur},
+  journal={arXiv preprint arXiv:2203.12546},
+  year={2022},
+  tags={community_detection, related_works, default},
+  file={./pdfs/2203.12546.pdf}
+}
+
+@article{hsu2018probabilistic,
+  title={A probabilistic constrained clustering for transfer learning and image category discovery},
+  author={Hsu, Yen-Chang and Lv, Zhaoyang and Schlosser, Joel and Odom, Phillip and Kira, Zsolt},
+  journal={arXiv preprint arXiv:1806.11078},
+  year={2018},
+  tags={community_detection, related_works, default},
+  file={./pdfs/1806.11078.pdf},
+  comment={exact formulation as ours},
+}
+
+@inproceedings{lipor2017leveraging,
+  title={Leveraging union of subspace structure to improve constrained clustering},
+  author={Lipor, John and Balzano, Laura},
+  booktitle={International Conference on Machine Learning},
+  pages={2130--2139},
+  year={2017},
+  organization={PMLR},
+  tags={community_detection, related_works, default, active},
+  file={./pdfs/1608.02146.pdf},
+}
+
+@article{manduchi2021deep,
+  title={Deep conditional gaussian mixture model for constrained clustering},
+  author={Manduchi, Laura and Chin-Cheong, Kieran and Michel, Holger and Wellmann, Sven and Vogt, Julia},
+  journal={Advances in Neural Information Processing Systems},
+  volume={34},
+  pages={11303--11314},
+  year={2021},
+  tags={community_detection, related_works, default, active},
+  file={./pdfs/NeurIPS-2021-deep-conditional-gaussian-mixture-model-for-constrained-clustering-Paper.pdf},
+}
+
+@article{luo2018semi,
+  title={Semi-crowdsourced clustering with deep generative models},
+  author={Luo, Yucen and Tian, Tian and Shi, Jiaxin and Zhu, Jun and Zhang, Bo},
+  journal={Advances in Neural Information Processing Systems},
+  volume={31},
+  year={2018},
+  tags={community_detection, related_works, default, active},
+  file={./pdfs/NeurIPS-2018-semi-crowdsourced-clustering-with-deep-generative-models-Paper.pdf},
+}
+
+@inproceedings{zhang2019framework,
+  title={A framework for deep constrained clustering-algorithms and advances},
+  author={Zhang, Hongjing and Basu, Sugato and Davidson, Ian},
+  booktitle={Joint European Conference on Machine Learning and Knowledge Discovery in Databases},
+  pages={57--72},
+  year={2019},
+  organization={Springer},
+  tags={community_detection, related_works, default, active},
+  file={./pdfs/1901.10061.pdf},
+}
+
+@article{ho2020denoising,
+  title={Denoising diffusion probabilistic models},
+  author={Ho, Jonathan and Jain, Ajay and Abbeel, Pieter},
+  journal={Advances in Neural Information Processing Systems},
+  volume={33},
+  pages={6840--6851},
+  year={2020},
+  tags={reading, diffusion, default,},
+  file={./pdfs/2006.11239.pdf},
+}
+
+@inproceedings{sohl2015deep,
+  title={Deep unsupervised learning using nonequilibrium thermodynamics},
+  author={Sohl-Dickstein, Jascha and Weiss, Eric and Maheswaranathan, Niru and Ganguli, Surya},
+  booktitle={International Conference on Machine Learning},
+  pages={2256--2265},
+  year={2015},
+  organization={PMLR},
+  tags={reading, diffusion, default,},
+  file={./pdfs/sohl-dickstein15.pdf},
+}
+
+@inproceedings{gutmann2010noise,
+  title={Noise-contrastive estimation: A new estimation principle for unnormalized statistical models},
+  author={Gutmann, Michael and Hyv{\"a}rinen, Aapo},
+  booktitle={Proceedings of the thirteenth international conference on artificial intelligence and statistics},
+  pages={297--304},
+  year={2010},
+  organization={JMLR Workshop and Conference Proceedings},
+  tags={reading, diffusion, default,},
+  file={./pdfs/gutmann10a.pdf},
+}
+
+@article{hyvarinen2005estimation,
+  title={Estimation of non-normalized statistical models by score matching.},
+  author={Hyv{\"a}rinen, Aapo and Dayan, Peter},
+  journal={Journal of Machine Learning Research},
+  volume={6},
+  number={4},
+  year={2005},
+  tags={reading, diffusion, default,},
+  file={./pdfs/hyvarinen05a.pdf},
+}

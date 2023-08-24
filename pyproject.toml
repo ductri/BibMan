@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling", ]
+build-backend = "hatchling.build"
+
+[project]
+name = "bibman"
+version = "0.2"
+authors = [
+  { name="Tri Nguyen", email="ductricse@gmail.com" },
+]
+description = "A TUI app to manage bibliography"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies=[
+"anytree==2.8.0",
+"bibtexparser==1.4.0",
+"tqdm==4.61.1",
+"pdf2bib==1.0.3",
+"PyYAML==6.0.1",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ductri/bibman"
+"Bug Tracker" = "https://github.com/ductri/bibman/issues"
+
+[project.scripts]
+bibman = "bibman.main:run"

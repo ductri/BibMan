@@ -1,0 +1,4 @@
+anytree==2.8.0
+bibtexparser==1.4.0
+tqdm==4.61.1
+pdf2bib==1.0.3
