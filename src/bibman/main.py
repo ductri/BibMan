@@ -675,9 +675,9 @@ class MainApp(object):
         # path_to_file = os.path.join(path_to_data, relative_path)
         path_to_file = os.path.join(config.data_dir, buffer_name)
         subprocess.run(['vim', '-c :set paste', "-c startinsert", path_to_file])
-        with open('data/%s' % buffer_name, 'rt') as file_handler:
+        with open(os.path.join(config.data_dir, buffer_name), 'rt') as file_handler:
             text = file_handler.read()
-        with open('data/%s' % buffer_name, 'wt') as file_handler:
+        with open(os.path.join(config.data_dir, buffer_name), 'wt') as file_handler:
             file_handler.write('')
         curses.reset_prog_mode()
         self.reload()

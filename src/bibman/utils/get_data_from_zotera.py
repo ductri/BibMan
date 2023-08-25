@@ -3,7 +3,7 @@ import json
 from tqdm import tqdm
 
 library_id = '8492328'
-api_key =  'CKLR7GWAOgZDMbXNxQgOKXzZ'
+api_key =  ''
 library_type = 'user'
 zot = zotero.Zotero(library_id, library_type, api_key)
 # items = zot.everything(zot.items())
