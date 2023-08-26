@@ -44,8 +44,7 @@ I don't know how to list a list/categorize features ...
 
 
 ## Manual
-
-(providing it as a Python package later)
+Require: `vim` for editing bib file, `zotero` and `evince` for opening pdf files. Without these apps, corresponding features will not be available (other features will be fine though).
 
 Install:
 ```
