@@ -57,11 +57,12 @@ bibman
 ```
 Config file can be found at `~/.config/bibman/config.yml`, and data directory is (configurable) at `~/bibman_data/`.
 
-There are 3 columns: collections, papers, attributes from left to right. 
+The layout contains 3 columns: collections, papers, attributes from left to right. 
 
 ```
 ---------------
 SHORT KEYS
+(still updating ...)
 ---------------
 * General:
 - h,j,k,l: basic movement as in vim
