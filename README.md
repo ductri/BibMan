@@ -5,7 +5,9 @@
 
 A TUI bibliography manager.
 It aims to support only the most *basis* features as a general bibliography manager.
-![demo](https://youtu.be/SeaXmt7um30)
+![demo](https://github.com/ductri/BibMan/blob/main/src/bibman/screenshot/demo1.png)
+
+A short [youtube-demo](https://youtu.be/Tt_wGJYMHY8)
 
 ## Why not Zotero/Mendeley
 
