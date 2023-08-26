@@ -102,7 +102,8 @@ COMMANDS
     + download <url>: download a pdf file for the current paper
     + add_local_file <path>: copy a pdf file for the current paper
     + remove: remove the current paper
-    + add_tag: add a new tag 
+    + add_tag: add a new tag
+    + note: add or modify the note associating to the current paper
     + ...
 ```
 
