@@ -42,6 +42,9 @@ when choosing the child node a1, it will show all papers containng both tags a a
 
 I don't know how to list a list/categorize features ... 
 
+- Basic features: add/remove a paper, add/remove a tag, search, modify paper's fields such as authors, year.
+- Take note
+- And ...
 
 ## Manual
 Require: `vim` for editing bib file, `zotero` and `evince` for opening pdf files. Without these apps, corresponding features will not be available (other features will be fine though).
