@@ -47,7 +47,7 @@ I don't know how to list a list/categorize features ...
 - And ...
 
 ## Manual
-Require: `vim` for editing bib file, `zotero` and `evince` for opening pdf files. Without these apps, corresponding features will not be available (other features will be fine though).
+Require: `vim` for editing bib file, `zathura` and/or `evince` for opening pdf files. Without these apps, corresponding features will not be available (other features will be fine though).
 
 Install:
 ```
