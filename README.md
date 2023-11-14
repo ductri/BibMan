@@ -40,8 +40,7 @@ when choosing the child node a1, it will show all papers containng both tags a a
 
 ## Features
 
-I don't know how to list a list/categorize features ... 
-
+A brief introduction at: [https://ductri.github.io/note/2023/09/27/bibman.html](https://ductri.github.io/note/2023/09/27/bibman.html)
 
 ## Manual
 Require: `vim` for editing bib file, `zotero` and `evince` for opening pdf files. Without these apps, corresponding features will not be available (other features will be fine though).
@@ -103,4 +102,6 @@ COMMANDS
     + ...
 ```
 
+### Todo
 
+- Warning when removing a paper having a note
