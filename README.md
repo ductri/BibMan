@@ -43,7 +43,7 @@ when choosing the child node a1, it will show all papers containng both tags a a
 A brief introduction at: [https://ductri.github.io/note/2023/09/27/bibman.html](https://ductri.github.io/note/2023/09/27/bibman.html)
 
 ## Manual
-Require: `vim` for editing bib file, `zotero` and `evince` for opening pdf files. Without these apps, corresponding features will not be available (other features will be fine though).
+Require: `vim` for editing bib file, `zathura` and/or `evince` for opening pdf files. Without these apps, corresponding features will not be available (other features will be fine though).
 
 Install:
 ```
@@ -98,7 +98,8 @@ COMMANDS
     + download <url>: download a pdf file for the current paper
     + add_local_file <path>: copy a pdf file for the current paper
     + remove: remove the current paper
-    + add_tag: add a new tag 
+    + add_tag: add a new tag
+    + note: add or modify the note associating to the current paper
     + ...
 ```
 
