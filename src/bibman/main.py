@@ -11,6 +11,7 @@ import itertools
 from datetime import datetime
 import shutil
 import webbrowser
+from pathlib import Path
 
 from anytree import Node, PreOrderIter
 from anytree.resolver import Resolver, ChildResolverError
@@ -631,9 +632,9 @@ class MainApp(object):
         self.stdscr.refresh()
         curses.def_prog_mode()
         curses.endwin()
-        # relative_path = config.data_dir= os.path.dirname(os.path.abspath(__file__))
         path_to_file = os.path.join(config.data_dir, file_path)
         subprocess.run(['vim', path_to_file])
+
         curses.reset_prog_mode()
         self.reload()
         self.stdscr.refresh()
@@ -646,6 +647,9 @@ class MainApp(object):
             path_to_file = os.path.join(config.data_dir, path)
             if os.path.isfile(path_to_file):
                 Popen([program, path_to_file], stdout=DEVNULL, stderr=STDOUT)
+                # WARNING: hard code here, slower cpu will behave unexpectedly.
+                # subprocess.run(['sleep 1.5'], shell=True, stdout=DEVNULL, stderr=STDOUT)
+                # subprocess.run(['swaymsg move container to workspace number 4'], shell=True)
                 self.notify_user('opened paper successfully')
             else:
                 pass
@@ -659,9 +663,10 @@ class MainApp(object):
         curses.def_prog_mode()
         curses.endwin()
         path_to_file = os.path.join(config.data_dir, 'bib_collection.bib')
-        # path_to_data = os.path.dirname(os.path.abspath(__file__))
-        # path_to_file = os.path.join(path_to_data, relative_path)
-        subprocess.run(['vim', '-c silent! /%s'%key, path_to_file])
+
+        path_to_file = Path(path_to_file)
+        subprocess.run(['vim', '-c silent! /%s'%key, 'bib_collection.bib'], cwd=path_to_file.parent.absolute())
+
         curses.reset_prog_mode()
         self.reload()
         self.stdscr.refresh()
