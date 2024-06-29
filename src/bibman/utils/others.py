@@ -10,6 +10,7 @@ from anytree.resolver import Resolver, ChildResolverError
 # import bibman.definitions
 from bibman import config
 
+
 def get_path(node):
     """
     bad library so that I have to implement this trivial function

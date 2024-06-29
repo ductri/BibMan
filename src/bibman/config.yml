@@ -1,2 +1,5 @@
 data_dir: "~/bibman_data/"
 
+pdf_reader: "zathura"
+
+

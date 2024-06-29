@@ -1,0 +1,5 @@
+{
+"include": ["./bibman"],
+"venvPath":  "/home/tringuyen/code/bibman_public/",
+"venv": "localenv"
+}

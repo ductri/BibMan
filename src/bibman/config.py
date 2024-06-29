@@ -1,6 +1,8 @@
 import yaml
 import os
 import shutil
+from dataclasses import dataclass
+
 
 path_to_config = f'{os.getenv("HOME")}/.config/bibman/config.yml'
 if not os.path.exists(path_to_config):

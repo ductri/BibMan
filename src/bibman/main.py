@@ -15,8 +15,8 @@ from pathlib import Path
 
 from anytree import Node, PreOrderIter
 from anytree.resolver import Resolver, ChildResolverError
-import pdf2bib
-from pdf2bib import pdf2bib_singlefile
+# import pdf2bib
+# from pdf2bib import pdf2bib_singlefile
 
 from bibman.utils.data_manager import DatabaseManager
 from bibman.utils.network_utils import download_file
@@ -213,7 +213,7 @@ class MainApp(object):
     def __init__(self, stdscr):
         self.channels = dict()
         self.database = DatabaseManager()
-        pdf2bib.config.set('verbose',False)
+        # pdf2bib.config.set('verbose', False)
 
         self.stdscr = stdscr
         curses.curs_set(False)
@@ -565,25 +565,26 @@ class MainApp(object):
             else:
                 self.notify_user('Content is empty!')
         elif command_info['name'] == 'ADD_PAPER_URL':
-            self.notify_user('Downloading ...')
-            url = command_info['url']
-            filename = str(random.randint(0, 100000000000))
-            path_to_file = os.path.join(config.data_dir, 'pdfs', '%s.pdf'%filename)
-            download_result = download_file(url, path_to_file)
-            if download_result:
-                self.notify_user('Retrieving bib info ...')
-                result = pdf2bib_singlefile(path_to_file)
-                info = result['metadata']
-                paper_dict = others.format_bib(info, path_to_file)
-                paper_dict['file'] = path_to_file
-                paper_dict['tags'] = self.component_dict['tree'].get_current_item()
-                if 'journal' in info:
-                    paper_dict['journal'] = info['journal']
-                self.database.add_paper(paper_dict)
-                self.update_data()
-                self.notify_user('Added a paper')
-            else:
-                self.notify_user('Downloading ... Failed.')
+            self.notify_user('Deprecated feature ...')
+            # self.notify_user('Downloading ...')
+            # url = command_info['url']
+            # filename = str(random.randint(0, 100000000000))
+            # path_to_file = os.path.join(config.data_dir, 'pdfs', '%s.pdf'%filename)
+            # download_result = download_file(url, path_to_file)
+            # if download_result:
+            #     self.notify_user('Retrieving bib info ...')
+            #     result = pdf2bib_singlefile(path_to_file)
+            #     info = result['metadata']
+            #     paper_dict = others.format_bib(info, path_to_file)
+            #     paper_dict['file'] = path_to_file
+            #     paper_dict['tags'] = self.component_dict['tree'].get_current_item()
+            #     if 'journal' in info:
+            #         paper_dict['journal'] = info['journal']
+            #     self.database.add_paper(paper_dict)
+            #     self.update_data()
+            #     self.notify_user('Added a paper')
+            # else:
+            #     self.notify_user('Downloading ... Failed.')
         elif command_info['name'] == 'REMOVE_PAPER':
             event = {'name': 'REMOVE_PAPER', 'owner': 'main_app'}
             self.component_dict[self.global_state['current_component']].receive_event(event)
@@ -718,7 +719,7 @@ class MainApp(object):
             elif event['name'] == 'COPY_TO_CLIPBOARD':
                 self.notify_user('Text is sent to clipboard')
             elif event['name'] == 'ASK_OPEN_FILE':
-                self.open_paper_external(event['relative_path'])
+                self.open_paper_external(event['relative_path'], program=config.config_dict['pdf_reader'])
             elif event['name'] == 'ASK_OPEN_BIB':
                 self.open_bib_file(event['paper_id'])
             elif event['name'] == 'RESP_REMOVE_PAPER':
