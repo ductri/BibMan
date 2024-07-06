@@ -1,0 +1,22 @@
+Screen {
+layout: horizontal;
+}
+
+ListItem {
+height: auto;
+}
+
+TagColumn {
+width: 20%;
+}
+
+PaperColumn {
+width: 50%;
+align-vertical: top;
+}
+
+AttributeColumn {
+width: 30%;
+align-vertical: top;
+}
+

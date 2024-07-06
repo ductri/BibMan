@@ -11,9 +11,10 @@ from datetime import datetime
 from bibtexparser.bibdatabase import BibDatabase
 
 from bibman import config
+from bibman.textual_ui.observer_dp import Publisher, MyEvent
 
 
-class DatabaseManager(object):
+class DatabaseManager(Publisher):
     """
     Next step: eliminate dependence on this poor Bibtexparser
     - Create a Singleton of this class
@@ -25,11 +26,13 @@ class DatabaseManager(object):
             'volume': '', 'created_time': '01/01/1994 00:00:00', \
             '__order_value': '10000000', 'label': ','}
     DATETIME_FORMAT = '%m/%d/%Y %H:%M:%S'
-    def __init__(self):
+    def __init__(self, dry_run=False):
+        super().__init__()
         self.current_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
         self.path_collection_tree = os.path.join(config.data_dir, 'collection_tree.txt')
         self.path_bib_collection = os.path.join(config.data_dir, 'bib_collection.bib')
         self.create_empty_data()
+        self.dry_run = dry_run
 
         with open(self.path_collection_tree, 'rt') as file_handler:
             self.collection_tree = json.load(file_handler)
@@ -178,21 +181,25 @@ class DatabaseManager(object):
 
         bib_database = BibDatabase()
         bib_database.entries = DatabaseManager.post_preprocess(self.papers)
-        with open(src, 'wt') as bibtex_file:
-            bibtexparser.dump(bib_database, bibtex_file)
+        if not self.dry_run:
+            with open(src, 'wt') as bibtex_file:
+                bibtexparser.dump(bib_database, bibtex_file)
+        else:
+            print('Fake dumping to bib_collection done.')
 
     def dump_collection_tree(self):
         """
         DANGEROUS
         """
-        # src = os.path.join(self.current_path, 'data', 'collection_tree.txt')
-        # dst = os.path.join(self.current_path, 'data', '.collection_tree.txt')
         src = self.path_collection_tree
         dst = os.path.join(config.data_dir, '.collection_tree.txt')
         shutil.copyfile(src, dst)
 
-        with open(src, 'wt') as file_handler:
-            json.dump(self.collection_tree, file_handler)
+        if not self.dry_run:
+            with open(src, 'wt') as file_handler:
+                json.dump(self.collection_tree, file_handler)
+        else:
+            print('Fake dumping to collection_tree.txt done')
 
     def _look_paper_up(self, paper_id):
         for paper in self.papers:
@@ -233,6 +240,8 @@ class DatabaseManager(object):
             current_node = current_node[node]
         current_node[tag_name] = {}
         self.dump_collection_tree()
+
+        self.notify_event(MyEvent('add_new_tag', self.get_collection(), self))
 
     def exit(self):
         # print('Killing timer ...')

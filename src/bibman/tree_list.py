@@ -35,7 +35,6 @@ class TreeList(ScrollableList):
         decorated_flatten_nodes = [' '*(node.depth-1)*2 + '▹' + node.name if node.children != () else ' '*(node.depth-1)*2 + ' ' + node.name for node in nodes]
         return decorated_flatten_nodes
 
-
     def lost_focus(self):
         ScrollableList.lost_focus(self)
         event = {'name': 'LOST_FOCUS', 'owner': 'tree'}
