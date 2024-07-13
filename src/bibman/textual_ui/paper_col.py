@@ -61,41 +61,35 @@ class PaperColumn(Static):
             super().__init__()
 
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode"),
-                ('r',  'remove_item',  'remove item'),
-                ('l', 'move_right', 'Move right'),
+                # ('r',  'remove_item',  'remove item'),
+                # ('l', 'move_right', 'Move right'),
                 ]
 
     def __init__(self):
         super().__init__()
-        self.__view = MyListView()
+        self.view = MyListView()
         self.deco_type = 'INDEX'
         self.controller = PaperController()
 
     def compose(self) -> ComposeResult:
-        yield self.__view
+        yield self.view
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark = not self.dark
 
     def action_remove_item(self):
-        self.__view.pop()
-
-    # # The followings are public API to clients
-    # def inject_data(self, data: List[str]):
-    #     self.data = data
-    #     data_ = [ListItem(Label(item)) for item in data]
-    #     self.__view = MyListView(*data_)
+        self.view.pop()
 
     def add_paper(self, paper):
         pass
 
     def focus(self, scroll_visible: bool = True) -> Self:
-        self.__view.focus()
+        self.view.focus()
         return self
 
     def action_move_right(self) -> None:
-        self.__view.blur()
+        self.view.blur()
         self.post_message(GivingUpFocus('from_paper'))
 
     def action_select_paper(self, index):
@@ -115,8 +109,8 @@ class PaperColumn(Static):
                 raise Exception(f'Unsupported deco_type of {deco_type}')
         items = papers2strs(self.controller.papers, deco_type=self.deco_type)
         items = [ListItem(Label(item)) for item in items]
-        self.__view.clear()
-        self.__view.extend(items)
+        self.view.clear()
+        self.view.extend(items)
 
     def update_new_data(self, papers: List[Dict]):
         self.controller.update_new_data(papers)

@@ -1,4 +1,5 @@
 from typing import List, Dict
+from typing_extensions import Self
 from textual.app import App, ComposeResult
 from textual.reactive import Reactive
 from textual.widgets import Header, Footer, ListItem, ListView, Label, Static
@@ -112,7 +113,7 @@ class TagColumn(Static):
 
 
     BINDINGS = [
-            ('l', 'move_right', 'Move right'),
+            # ('l', 'move_right', 'Move right'),
             ]
     data = reactive([
                 ('tag 1'),
@@ -131,6 +132,10 @@ class TagColumn(Static):
 
     def compose(self) -> ComposeResult:
         yield self.view
+
+    def focus(self, scroll_visible: bool = True) -> Self:
+        self.view.focus()
+        return self
 
     def action_move_right(self) -> None:
         self.view.blur()

@@ -1,5 +1,6 @@
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, ListItem, ListView, Label
+from textual import log
 
 from bibman.textual_ui.paper_col import PaperColumn
 from bibman.textual_ui.my_list_view import MyListView
@@ -12,8 +13,8 @@ from bibman.textual_ui.controllers import Controller
 class BibManApp(App):
     """A Textual app to manage stopwatches."""
 
-    BINDINGS = [('l', 'right', 'Move right'),
-                ('h', 'left', 'Move left'),
+    BINDINGS = [('l', 'go_right', 'Move right'),
+                ('h', 'go_left', 'Move left'),
                 ('x', 'enter', 'Enter'),
                 ]
     CSS_PATH = "css/bib_man_app.tcss"
@@ -71,9 +72,20 @@ class BibManApp(App):
     #         self.attribute_col.focus()
     #         event.stop()
 
+    def action_go_right(self):
+        if self.focused == self.controller.tag_col.view:
+            self.controller.paper_col.focus()
+        elif self.focused == self.controller.paper_col.view:
+            self.controller.attribute_col.focus()
+    def action_go_left(self):
+        if self.focused == self.controller.attribute_col.view:
+            self.controller.paper_col.focus()
+        elif self.focused == self.controller.paper_col.view:
+            self.controller.tag_col.focus()
+
     def on_mount(self):
         self.controller.tag_col.update_new_data(self.controller.database.get_collection())
-        print('on show event')
+        self.controller.tag_col.focus()
 
     def on_tag_column_tags_selection(self, event):
         papers = self.controller.database.get_list_papers(event.tags)

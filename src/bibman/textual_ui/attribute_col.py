@@ -1,5 +1,7 @@
-from inspect import Attribute
 from typing import List
+from typing_extensions import Self
+from inspect import Attribute
+
 from textual.app import App, ComposeResult
 from textual.reactive import Reactive
 from textual.widgets import Header, Footer, ListItem, ListView, Label, Static
@@ -105,7 +107,7 @@ class AttributeColumn(Static):
                 ])
     def __init__(self):
         super().__init__()
-        self.__view = MyListView()
+        self.view = MyListView()
         self.controller = AttributeController()
 
     # def inject_data(self, data: List[str]):
@@ -114,7 +116,11 @@ class AttributeColumn(Static):
     def compose(self) -> ComposeResult:
         # data = [ListItem(Label(item)) for item in self.data]
         # yield MyListView(*data)
-        yield self.__view
+        yield self.view
+
+    def focus(self, scroll_visible: bool = True) -> Self:
+        self.view.focus()
+        return self
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
@@ -187,8 +193,8 @@ class AttributeColumn(Static):
         attrs = get_paper_attributes(paper)
         items = add_decoration(attrs, 50)
         items = [ListItem(Label(item)) for item in items]
-        self.__view.clear()
-        self.__view.extend(items)
+        self.view.clear()
+        self.view.extend(items)
 
     def update_new_data(self, paper):
         self.controller.update_new_data(paper)
