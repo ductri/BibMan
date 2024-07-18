@@ -14,3 +14,4 @@
 
 - Reading history
 
+- Replace the tree column with Collapsible widget

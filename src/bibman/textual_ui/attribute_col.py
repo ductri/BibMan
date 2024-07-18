@@ -199,5 +199,6 @@ class AttributeColumn(Static):
     def update_new_data(self, paper):
         self.controller.update_new_data(paper)
         self.ui_update_new_data(paper)
+        self.view.index = 0
 
 

@@ -5,6 +5,7 @@ from textual.reactive import Reactive
 from textual.widgets import Header, Footer, ListItem, ListView, Label, Static
 from textual.reactive import reactive
 from textual.message import Message
+from textual import events
 
 from anytree import Node
 
@@ -14,7 +15,6 @@ from .observer_dp import MyEvent, Subscriber, Publisher
 
 
 class TagController(Publisher):
-    # def __init__(self, tags_dict, default_tag_name='default'):
     def __init__(self):
         super().__init__()
         default_tag_name='default'
@@ -31,9 +31,6 @@ class TagController(Publisher):
         self.construct_tree(self.tree_root, self.tags_dict)
         self.flattened_nodes = self.flatten_tree(self.tree_root)
         self._selected_node = None if len(self.flattened_nodes) == 0 else self.flattened_nodes[0]
-
-        # if len(self.flattened_nodes) > 0:
-        #     self.action_choose_tag(0)
 
     def ui_init(self):
         node = self.flattened_nodes[0]
@@ -63,13 +60,18 @@ class TagController(Publisher):
         new_tag_event = MyEvent(name='new_tag', data={'tag_name': tag_name,  'path_to_parent': others.get_path (chosen_node)}, source=self)
         self.notify_event(new_tag_event)
 
-    def my_action_choose_tag(self, node):
-        tags = set(others.get_path(node).split('/'))
-        event = MyEvent(name='choose_tags', data= {'tags': tags}, source=self)
-        self.notify_event(event)
+    # def my_action_choose_tag(self, node):
+    #     tags = set(others.get_path(node).split('/'))
+    #     event = MyEvent(name='choose_tags', data= {'tags': tags}, source=self)
+    #     self.notify_event(event)
 
-    def action_choose_tag(self, index):
-        self.my_action_choose_tag(self.flattened_nodes[index])
+    def get_tags(self, index):
+        node = self.flattened_nodes[index]
+        tags = set(others.get_path(node).split('/'))
+        return tags
+
+    # def action_choose_tag(self, index):
+    #     self.my_action_choose_tag(self.flattened_nodes[index])
 
     # def render(self):
     #     decorated_flatten_nodes = [' '*(node.depth-1)*2 + '▹' + node.name if node.children != () else ' '*(node.depth-1)*2 + ' ' + node.name for node in self.flattened_nodes]
@@ -113,7 +115,7 @@ class TagColumn(Static):
 
 
     BINDINGS = [
-            # ('l', 'move_right', 'Move right'),
+            ('enter', 'enter', 'Enter'),
             ]
     data = reactive([
                 ('tag 1'),
@@ -124,11 +126,6 @@ class TagColumn(Static):
         super().__init__()
         self.view = MyListView()
         self.controller = TagController()
-
-    # def inject_data(self, data: List[str]):
-    #     self.data = data
-    #     data_ = [ListItem(Label(item)) for item in data]
-    #     self.view = MyListView(*data_)
 
     def compose(self) -> ComposeResult:
         yield self.view
@@ -150,12 +147,19 @@ class TagColumn(Static):
     def action_ui_select_tag(self, index):
         pass
 
+    def on_key(self, event: events.Key) -> None:
+        if event.key == "enter":
+            chosen_ind = self.view.index
+            tags = self.controller.get_tags(chosen_ind)
+            self.post_message(TagColumn.TagsSelection(tags))
+
     def action_select_tag(self, tags):
         self.post_message(TagColumn.TagsSelection(tags))
 
     def update_new_data(self, data: Dict):
         self.controller.update_new_data(data)
         self.ui_update_new_data(data)
+        self.view.index = 0
         self.action_select_tag(set(['default']))
 
 

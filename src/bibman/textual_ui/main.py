@@ -1,5 +1,5 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, ListItem, ListView, Label
+from textual.widgets import Header, Footer, ListItem, ListView, Label, Static
 from textual import log
 
 from bibman.textual_ui.paper_col import PaperColumn
@@ -75,12 +75,12 @@ class BibManApp(App):
     def action_go_right(self):
         if self.focused == self.controller.tag_col.view:
             self.controller.paper_col.focus()
-        elif self.focused == self.controller.paper_col.view:
+        elif self.focused == self.controller.paper_col:
             self.controller.attribute_col.focus()
     def action_go_left(self):
         if self.focused == self.controller.attribute_col.view:
             self.controller.paper_col.focus()
-        elif self.focused == self.controller.paper_col.view:
+        elif self.focused == self.controller.paper_col:
             self.controller.tag_col.focus()
 
     def on_mount(self):

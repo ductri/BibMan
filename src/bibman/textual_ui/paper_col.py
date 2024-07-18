@@ -5,10 +5,13 @@ from textual.widgets import Header, Footer, ListItem, ListView, Label, Static
 from textual.reactive import reactive
 from typing_extensions import Self
 from textual.message import Message
+from textual import events
 
 from .my_list_view import MyListView
 from .tag_col import GivingUpFocus
 from .observer_dp import MyEvent, Subscriber, Publisher
+
+
 
 
 class PaperController(Publisher):
@@ -50,7 +53,7 @@ class PaperController(Publisher):
         self.papers = papers
 
 
-class PaperColumn(Static):
+class PaperColumn(MyListView):
     """
     - To render and to receive user input
     - It is stateless in terms of data, only stateful in terms of UI
@@ -61,35 +64,38 @@ class PaperColumn(Static):
             super().__init__()
 
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode"),
-                # ('r',  'remove_item',  'remove item'),
-                # ('l', 'move_right', 'Move right'),
                 ]
 
     def __init__(self):
         super().__init__()
-        self.view = MyListView()
+        # self.view = MyListView()
         self.deco_type = 'INDEX'
         self.controller = PaperController()
-
-    def compose(self) -> ComposeResult:
-        yield self.view
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark = not self.dark
 
     def action_remove_item(self):
-        self.view.pop()
+        self.pop()
 
-    def add_paper(self, paper):
-        pass
+    def action_cursor_down(self):
+        super().action_cursor_down()
+        if self.index:
+            self.action_select_paper(int(self.index))
 
-    def focus(self, scroll_visible: bool = True) -> Self:
-        self.view.focus()
-        return self
+    def action_cursor_up(self):
+        super().action_cursor_up()
+        if self.index:
+            self.action_select_paper(int(self.index))
+
+
+    # def focus(self, scroll_visible: bool = True) -> Self:
+    #     self.focus()
+    #     return self
 
     def action_move_right(self) -> None:
-        self.view.blur()
+        self.blur()
         self.post_message(GivingUpFocus('from_paper'))
 
     def action_select_paper(self, index):
@@ -109,12 +115,13 @@ class PaperColumn(Static):
                 raise Exception(f'Unsupported deco_type of {deco_type}')
         items = papers2strs(self.controller.papers, deco_type=self.deco_type)
         items = [ListItem(Label(item)) for item in items]
-        self.view.clear()
-        self.view.extend(items)
+        self.clear()
+        self.extend(items)
 
     def update_new_data(self, papers: List[Dict]):
         self.controller.update_new_data(papers)
         self.ui_update_new_data(papers)
+        self.index = 0
         self.action_select_paper(0)
 
 
